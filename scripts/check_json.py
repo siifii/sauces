@@ -49,6 +49,47 @@ def _join(path, key):
     return f"{path}.{key}" if path else key
 
 
+TYPES = {"object", "array", "string", "boolean", "null", "number", "integer"}
+
+
+def check_schema(schema, path="schema"):
+    """Recursively verify the schema itself; raise SchemaError on anything unsupported or malformed."""
+    if not isinstance(schema, dict):
+        raise SchemaError(f"{path}: schema must be a JSON object")
+    for kw in schema:
+        if kw not in SUPPORTED and kw not in ANNOTATIONS:
+            raise SchemaError(f"unsupported keyword: {kw} (at {path})")
+    if "type" in schema:
+        t = schema["type"]
+        ts = t if isinstance(t, list) else [t]
+        if not ts or not all(isinstance(x, str) and x in TYPES for x in ts):
+            raise SchemaError(f"{path}: invalid type {json.dumps(t)}")
+    if "enum" in schema and not isinstance(schema["enum"], list):
+        raise SchemaError(f"{path}: enum must be a list")
+    if "required" in schema:
+        r = schema["required"]
+        if not isinstance(r, list) or not all(isinstance(x, str) for x in r):
+            raise SchemaError(f"{path}: required must be a list of strings")
+    if "pattern" in schema:
+        try:
+            re.compile(schema["pattern"])
+        except (re.error, TypeError) as e:
+            raise SchemaError(f"{path}: invalid pattern: {e}")
+    for kw in ("minimum", "maximum"):
+        if kw in schema and (isinstance(schema[kw], bool) or not isinstance(schema[kw], (int, float))):
+            raise SchemaError(f"{path}: {kw} must be a number")
+    if "properties" in schema:
+        props = schema["properties"]
+        if not isinstance(props, dict):
+            raise SchemaError(f"{path}: properties must be an object")
+        for k, sub in props.items():
+            check_schema(sub, f"{path}.properties.{k}")
+    if "items" in schema:
+        check_schema(schema["items"], f"{path}.items")
+    if "additionalProperties" in schema and schema["additionalProperties"] not in (True, False):
+        raise SchemaError(f"{path}: unsupported additionalProperties value (only true or false)")
+
+
 def validate(schema: dict, data: object, path: str = "") -> list[str]:
     """Return a list of `path: message` errors (empty when valid)."""
     if not isinstance(schema, dict):
@@ -86,8 +127,6 @@ def validate(schema: dict, data: object, path: str = "") -> list[str]:
             for key in data:
                 if key not in props:
                     errors.append(f"{here}: unexpected property '{key}'")
-        elif "additionalProperties" in schema and schema["additionalProperties"] is not True:
-            raise SchemaError("unsupported keyword: additionalProperties (only false or true)")
     if isinstance(data, list) and "items" in schema:
         for i, item in enumerate(data):
             errors.extend(validate(schema["items"], item, _join(path, i)))
@@ -115,6 +154,7 @@ def main(argv=None):
     schema = _load(args.schema, "schema")
     data = _load(args.data, "data")
     try:
+        check_schema(schema)
         errors = validate(schema, data)
     except SchemaError as e:
         print(str(e), file=sys.stderr)

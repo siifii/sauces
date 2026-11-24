@@ -103,8 +103,86 @@ def test_unreadable_inputs(tmp_path):
     assert run_script("check_json.py", str(tmp_path / "missing.json"), str(ok)).returncode == 2
 
 
+def test_nested_unsupported_keyword_is_error_even_on_empty_data(tmp_path):
+    for schema in ({"properties": {"a": {"oneOf": []}}},
+                   {"properties": {"a": {"items": {"anyOf": []}}}},
+                   {"items": {"allOf": []}}):
+        r = check(tmp_path, schema, {})
+        assert r.returncode == 2, schema
+        assert "unsupported keyword" in r.stderr
+
+
+@pytest.mark.parametrize("schema", [
+    {"properties": {"a": {"pattern": "("}}},
+    {"properties": []},
+    {"enum": "x"},
+    {"required": "a"},
+    {"type": "strng"},
+    {"additionalProperties": {"type": "string"}},
+])
+def test_malformed_schema_exits_2(tmp_path, schema):
+    r = check(tmp_path, schema, {})
+    assert r.returncode == 2
+    assert "Traceback" not in r.stderr and r.stderr.strip()
+
+
 @pytest.mark.parametrize("rel", SCHEMAS)
 def test_shipped_schemas_use_supported_keywords(tmp_path, rel):
     r = check(tmp_path, (REPO / rel).read_text(), {})
-    assert r.returncode in (0, 1), r.stderr  # not 2: no unsupported keywords
+    assert r.returncode == 1, r.stderr  # data {} is invalid, schema itself is fine
     assert "unsupported" not in r.stderr
+
+
+def test_shipped_schema_check_catches_nested_keyword(tmp_path):
+    schema = json.loads((REPO / SCHEMAS[0]).read_text())
+    schema["properties"]["screens"]["items"]["properties"]["states"]["items"]["oneOf"] = []
+    assert check(tmp_path, schema, {}).returncode == 2
+
+
+def _schema(rel):
+    return json.loads((REPO / rel).read_text())
+
+
+def test_profile_schema(tmp_path):
+    proj = {
+        "root": ".", "platform": "flutter", "architecture": "bloc", "state_management": "bloc",
+        "theme": {"location": "lib/theme.dart", "tokens_source": "ThemeData"},
+        "localization": {"system": "arb", "rtl": False, "locales": ["en"]},
+        "components": [{"name": "Btn", "path": "lib/btn.dart", "params": ["label"], "has_preview": False}],
+        "conventions": {"feature_folders": "feature-first", "naming": "snake_case"},
+        "screenshot_tooling": {"present": False},
+        "findings": [{"id": "f1", "area": "colors", "detail": "hard-coded", "paths": ["a.dart"]}],
+    }
+    data = {"version": 1, "mode": "existing", "projects": [proj]}
+    assert check(tmp_path, _schema(SCHEMAS[1]), data).returncode == 0
+    proj["platform"] = "windows"
+    r = check(tmp_path, _schema(SCHEMAS[1]), data)
+    assert r.returncode == 1 and "projects[0].platform" in r.stdout
+
+
+def _plan(**over):
+    p = {"version": 1, "approved": False, "approved_by": None, "platform": "flutter",
+         "items": [{"id": "i1", "design_ref": "login", "decision": "new", "name": "LoginForm",
+                    "path": "lib/login.dart", "level": "organism", "confidence": 0.8}],
+         "recommendations": [], "strings": [], "dependency_changes": []}
+    p.update(over)
+    return p
+
+
+def test_plan_schema(tmp_path):
+    assert check(tmp_path, _schema(SCHEMAS[2]), _plan(approved=True, approved_by="user")).returncode == 0
+    bad = _plan()
+    bad["items"][0]["decision"] = "maybe"
+    r = check(tmp_path, _schema(SCHEMAS[2]), bad)
+    assert r.returncode == 1 and "items[0].decision" in r.stdout
+
+
+def test_state_schema(tmp_path):
+    stage = {"status": "pending", "finished_at": None, "inputs_hash": None}
+    names = ["ingest", "scan", "plan", "build", "verify", "report"]
+    data = {"version": 1, "stages": {n: dict(stage) for n in names},
+            "generated_files": [], "changed_files": []}
+    assert check(tmp_path, _schema(SCHEMAS[3]), data).returncode == 0
+    data["stages"]["scan"]["status"] = "running"
+    r = check(tmp_path, _schema(SCHEMAS[3]), data)
+    assert r.returncode == 1 and "stages.scan.status" in r.stdout
