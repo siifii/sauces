@@ -11,9 +11,13 @@ code never flags. A `// sauces-lint-ignore` comment on a line suppresses finding
 that start on that line. Files matching an allow glob are skipped; --allow globs
 are added to the platform defaults.
 
-Known limit: the hardcoded-string rule only sees a literal that is the first
-argument of Text()/SelectableText() or the value of a named label argument,
-so `Text(cond ? 'a' : 'b')` is not flagged.
+hardcoded-string covers the first argument of Text()/SelectableText() and the value
+of hintText:, labelText:, helperText:, errorText:, tooltip:, semanticsLabel:. In that
+argument expression a non-empty string literal is a finding when it starts the argument
+or directly follows `?`, `:` or `??` at the top level (ternary / null-coalescing forms).
+Empty literals are allowed in every quote form. A literal whose whole body is exactly one
+interpolation (`'$name'`, `'${l10n.count}'`) has no literal text and is allowed; any text
+around the interpolation (`'Hi $name'`) is a finding. Raw strings never interpolate.
 """
 import argparse
 import json
@@ -26,15 +30,15 @@ MAX_TEXT = 200
 
 _STRING_ARGS = r"(?:hintText|labelText|helperText|errorText|tooltip|semanticsLabel)"
 
-# RULES[platform] -> [(rule_id, regex)]. A regex with a named group `lit` points at the
-# start of a string literal; the finding is dropped when that literal is empty.
+# RULES[platform] -> [(rule_id, regex)]. A regex with an empty named group `arg` marks the
+# start of an argument expression whose string literals are checked (see docstring).
 RULES = {
     "flutter": [
         ("hardcoded-color", re.compile(
             r"Color\(0x|Color\.fromARGB|Color\.fromRGBO|\bColors\.(?!transparent\b)")),
         ("hardcoded-string", re.compile(
             r"(?:\b(?:Text|SelectableText)\(\s*|\b" + _STRING_ARGS + r":\s*)"
-            r"(?P<lit>r?(?:'|\"))")),
+            r"(?P<arg>)")),
     ],
 }
 EXTENSIONS = {"flutter": (".dart",)}
@@ -160,10 +164,51 @@ def inside_literal(pos, literals):
     return any(a < pos < b for a, b in literals.items())
 
 
+INTERPOLATION_ONLY = re.compile(r"\$[A-Za-z_]\w*|\$\{[^{}]*\}")
+TERNARY_TAIL = re.compile(r"(?:\?\?|\?|:)\s*$")
+
+
+def has_text(src, start, end):
+    """True if the literal src[start:end] has user-facing literal text."""
+    body = src[start:end]
+    raw = body.startswith("r")
+    if raw:
+        body = body[1:]
+    q = body[:1]
+    inner = body[3:-3] if body.startswith(q * 3) and len(body) >= 6 else body[1:-1]
+    if inner == "":
+        return False
+    return raw or not INTERPOLATION_ONLY.fullmatch(inner)
+
+
+def arg_literals(masked, literals, pos):
+    """Start offsets of string literals in the argument expression beginning at pos:
+    the first token, plus any literal directly after ?, : or ?? at depth 0."""
+    out, depth, i, n = [], 0, pos, len(masked)
+    while i < n:
+        if i in literals:
+            if not masked[pos:i].strip() or (depth == 0 and TERNARY_TAIL.search(masked[pos:i])):
+                out.append(i)
+            i = literals[i]
+            continue
+        c = masked[i]
+        if c in "([{":
+            depth += 1
+        elif c in ")]}":
+            if depth == 0:
+                break
+            depth -= 1
+        elif (c == "," or c == ";") and depth == 0:
+            break
+        i += 1
+    return out
+
+
 def lint_file(path, rules):
     src = Path(path).read_text(encoding="utf-8", errors="replace")
     masked, literals = scan(src)
-    lines = src.splitlines()
+    lines = src.split("\n")
+
     def line_of(pos):
         return masked.count("\n", 0, pos) + 1
 
@@ -172,19 +217,17 @@ def lint_file(path, rules):
         for m in rx.finditer(masked):
             if inside_literal(m.start(), literals):
                 continue
-            if "lit" in rx.groupindex:
-                end = literals.get(m.start("lit"))
-                if end is None:
-                    continue
-                body = src[m.start("lit"):end].lstrip("r")
-                if body in ("''", '""', "", '""""""'):
-                    continue  # empty literal
+            hits = 1
+            if "arg" in rx.groupindex:
+                hits = sum(1 for st in arg_literals(masked, literals, m.end())
+                           if has_text(src, st, literals[st]))
             ln = line_of(m.start())
             text = lines[ln - 1] if ln <= len(lines) else ""
             if IGNORE_MARKER in text:
                 continue
-            found.append({"file": str(path), "line": ln, "rule": rule_id,
-                          "text": text.strip()[:MAX_TEXT]})
+            for _ in range(hits):
+                found.append({"file": str(path), "line": ln, "rule": rule_id,
+                              "text": text.strip()[:MAX_TEXT]})
     return found
 
 

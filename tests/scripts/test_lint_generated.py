@@ -174,3 +174,57 @@ def test_unknown_platform(tmp_path):
 def test_text_truncated(tmp_path):
     r = lint(tmp_path, "lib/a.dart", "x = Colors.red; // " + "z" * 400 + "\n")
     assert len(findings(r)[0]["text"]) == 200
+
+
+@pytest.mark.parametrize("code", ["Text('')", "Text(\"\")", "Text(\'\'\'\'\'\')", 'Text("""""")',
+                                  "Text(r'')", 'Text(r"")', "Text(cond ? '' : l10n.a)"])
+def test_empty_forms_allowed(tmp_path, code):
+    assert lint(tmp_path, "lib/a.dart", f"final w = {code};\n").returncode == 0
+
+
+def test_flags_ternary_both_branches(tmp_path):
+    r = lint(tmp_path, "lib/a.dart", "final w = Text(cond ? 'a' : 'b');\n")
+    assert rules(r) == [(1, "hardcoded-string")] * 2
+
+
+def test_flags_ternary_one_branch_and_multiline(tmp_path):
+    r = lint(tmp_path, "lib/a.dart", "final w = Text(\n  cond\n    ? l10n.a\n    : 'b',\n);\n")
+    assert rules(r) == [(1, "hardcoded-string")]
+
+
+def test_flags_null_coalescing(tmp_path):
+    r = lint(tmp_path, "lib/a.dart", "final w = Text(x ?? 'dflt');\n")
+    assert rules(r) == [(1, "hardcoded-string")]
+
+
+def test_flags_named_arg_ternary(tmp_path):
+    r = lint(tmp_path, "lib/a.dart", "final d = InputDecoration(hintText: isErr ? 'x' : null);\n")
+    assert rules(r) == [(1, "hardcoded-string")]
+
+
+def test_allows_l10n_ternary(tmp_path):
+    r = lint(tmp_path, "lib/a.dart",
+             "final w = Text(cond ? l10n.a : l10n.b);\nfinal v = Text(x ?? l10n.c, style: s);\n")
+    assert r.returncode == 0
+
+
+def test_literal_in_later_argument_not_flagged(tmp_path):
+    r = lint(tmp_path, "lib/a.dart", "final w = Text(title, semantics: foo(a: 'k'), key: Key('k'));\n")
+    assert r.returncode == 0
+
+
+@pytest.mark.parametrize("code", ["Text('$name')", "Text('${l10n.count}')", 'Text("${n}")',
+                                  "Text(cond ? '$a' : l10n.b)"])
+def test_interpolation_only_allowed(tmp_path, code):
+    assert lint(tmp_path, "lib/a.dart", f"final w = {code};\n").returncode == 0
+
+
+@pytest.mark.parametrize("code", ["Text('Hi $name')", "Text('${n} items')", "Text('$a$b')",
+                                  "Text(r'$name')", "Text('$a!')"])
+def test_text_around_interpolation_flagged(tmp_path, code):
+    assert rules(lint(tmp_path, "lib/a.dart", f"final w = {code};\n")) == [(1, "hardcoded-string")]
+
+
+def test_line_text_with_form_feed_stays_aligned(tmp_path):
+    r = lint(tmp_path, "lib/a.dart", "a;\x0c\nb = Colors.red;\n")
+    assert findings(r)[0]["text"] == "b = Colors.red;"
