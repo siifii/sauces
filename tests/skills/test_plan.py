@@ -138,3 +138,25 @@ def test_plan_md_sections(pipeline):
 
 def test_plan_does_not_touch_code(pipeline):
     assert git_status(pipeline["workdir"]) == pipeline["before"]
+
+
+def test_plan_design_suggestions(pipeline):
+    audit_path = pipeline["workdir"] / ".sauces" / "design-audit.json"
+    assert audit_path.is_file(), "design_audit.py was not run"
+    audit = json.loads(audit_path.read_text())
+    assert audit["version"] == 1, audit
+    audit_ids = {f["id"] for f in audit["findings"]}
+    suggestions = pipeline["plan"].get("design_suggestions") or []
+    assert suggestions, pipeline["plan"]
+    assert len(suggestions) <= 8, suggestions
+    for s in suggestions:
+        assert s["guideline"].strip() and s["evidence"].strip() and s["change"].strip(), s
+        assert s["choice"] == "keep", s
+        if "audit_id" in s:
+            assert s["audit_id"] in audit_ids, (s, audit_ids)
+    order = ["high", "medium", "low"]
+    ranks = [order.index(s["severity"]) for s in suggestions]
+    assert ranks == sorted(ranks), suggestions
+    headings = [line.lstrip("#").strip() for line in pipeline["plan_md"].splitlines()
+                if line.startswith("#")]
+    assert any(h.startswith("Design suggestions") for h in headings), headings

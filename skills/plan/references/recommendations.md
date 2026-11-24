@@ -48,7 +48,7 @@ Scan findings are not the only source of recommendations. When the design differ
 
 - `id`: `rec-design-theme-<n>`, `finding_id`: `design-theme-<n>` (there is no scan finding; the evidence is the design).
 - `why`: each difference with the design value, the current value (or "derived from seed `#3D5AFE`") and the ΔE76 when known, and that `keep` means the new UI uses the existing roles and styles and verify reports the difference.
-- Options:
+- Options (a theme change affects every screen, so each non-`keep` option's `label` ends with "(app-wide)", for example `Pin primary to #3D5AFE in AppTheme (app-wide)`):
   - `keep` (default): no change to the theme. New components use the nearest existing role or style; the differences are recorded on the items as expected fidelity notes.
   - `pin-roles`: set the listed roles or styles to the design values in the theme file (for Flutter, the named overrides of `ColorScheme.fromSeed(...)` and the `TextTheme` entries). `changes` must list every role or style it changes and the files that use them (grep the project for `colorScheme.<role>`, `textTheme.<style>` and the component theme), and warn that pinning a role breaks the Material 3 tonal derivation of its `on*` and `*Container` partners.
   - `fidelity-variant` (seed-based color schemes only): generate the scheme with `ColorScheme.fromSeed(seedColor: ..., dynamicSchemeVariant: DynamicSchemeVariant.fidelity)`, which keeps roles closer to the seed. Mark it "Flutter ≥ 3.22; verify in the project's Flutter version", and say that it shifts every role app-wide.

@@ -272,6 +272,73 @@
         "reasons",
         "options"
       ]
+    },
+    "design_suggestions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "audit_id": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "accessibility",
+              "consistency",
+              "states",
+              "platform",
+              "localization",
+              "ux"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "change": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          },
+          "guideline": {
+            "type": "string"
+          },
+          "choice": {
+            "type": "string",
+            "enum": [
+              "keep",
+              "apply"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "category",
+          "severity",
+          "title",
+          "evidence",
+          "change",
+          "why",
+          "guideline",
+          "choice"
+        ],
+        "additionalProperties": false
+      }
     }
   },
   "required": [

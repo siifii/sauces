@@ -250,3 +250,28 @@ def test_plan_structure_and_layer(tmp_path):
     bad["items"][0]["layer"] = 3
     r = check(tmp_path, _schema(SCHEMAS[2]), bad)
     assert r.returncode == 1 and "items[0].layer" in r.stdout
+
+
+def _suggestion(**over):
+    s = {"id": "sug-1", "audit_id": "audit-accessibility-1", "category": "accessibility",
+         "severity": "medium", "title": "Make the link a 48 dp target",
+         "evidence": "login/default: Forgot password? link is 20 px high",
+         "change": "Give the link a 48 px minimum touch height", "why": "Small targets are hard to hit",
+         "guideline": "Material 3: touch targets at least 48 x 48 dp", "choice": "keep"}
+    s.update(over)
+    return s
+
+
+def test_plan_design_suggestions(tmp_path):
+    assert check(tmp_path, _schema(SCHEMAS[2]), _plan(design_suggestions=[_suggestion()])).returncode == 0
+    no_audit = _suggestion()
+    del no_audit["audit_id"]
+    assert check(tmp_path, _schema(SCHEMAS[2]), _plan(design_suggestions=[no_audit])).returncode == 0
+    r = check(tmp_path, _schema(SCHEMAS[2]), _plan(design_suggestions=[_suggestion(choice="maybe")]))
+    assert r.returncode == 1 and "design_suggestions[0].choice" in r.stdout
+    r = check(tmp_path, _schema(SCHEMAS[2]), _plan(design_suggestions=[_suggestion(category="taste")]))
+    assert r.returncode == 1 and "design_suggestions[0].category" in r.stdout
+    bad = _suggestion()
+    del bad["guideline"]
+    r = check(tmp_path, _schema(SCHEMAS[2]), _plan(design_suggestions=[bad]))
+    assert r.returncode == 1 and "missing required 'guideline'" in r.stdout

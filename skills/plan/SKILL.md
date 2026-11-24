@@ -64,53 +64,53 @@ List in `dependency_changes` every package build would add for the plan as it st
 
 ## 7. Design suggestions
 
-If `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/design-review.md` exists, follow it to add design suggestions to the plan. Otherwise skip this step and leave the section out.
+Read `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/design-review.md` and follow it: run `design_audit.py`, turn its findings and the judgement checks into at most 8 `design_suggestions`, each with evidence, a concrete change and a cited guideline, all `choice: "keep"`.
 
 ## 8. Write and validate
 
-Write `.sauces/plan.json` with `version: 1`, `approved: false`, `approved_by: null`, `platform`, `structure`, `items`, `recommendations`, `strings` and `dependency_changes`. Use only schema fields. Validate:
+Write `.sauces/plan.json` with `version: 1`, `approved: false`, `approved_by: null`, `platform`, `structure`, `items`, `recommendations`, `strings`, `dependency_changes` and `design_suggestions`. Use only schema fields. Validate:
 
 ```bash
 python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/check_json.py" "${CLAUDE_PLUGIN_ROOT}/skills/plan/references/plan-schema.json" .sauces/plan.json
 ```
 
 - Exit 0: valid.
-- Exit 1: each `path: message` line is an error. Fix the file and validate again. Repeat until it exits 0. Never stop with an invalid plan.
+- Exit 1: each `path: message` line is an error. Fix and validate again until it exits 0. Never stop with an invalid plan.
 - Exit 2: schema or usage problem. Check the command and paths, then rerun.
 
-Then write `.sauces/plan.md` with exactly these sections in this order:
+Then write `.sauces/plan.md` with exactly these sections, in order:
 
 1. A title line and a status line (`Status: waiting for approval` or `Status: approved by user|eval`).
 2. `## Design-system structure`: the chosen pattern, the reasons, the alternatives with their folders.
 3. `## Summary`: screens and states, counts by decision (reuse / extend / new / token), strings count, recommendations count, dependency changes count.
 4. `## Components`: a table `ID | Design ref | Decision | Name | Level | Layer | Path | Existing | Confidence | Notes`.
-5. `## Tokens`: a table of design tokens → existing token or new `token` item (colors with hex, type styles, spacing, radii).
+5. `## Tokens`: a table of design tokens → existing token or new `token` item (colors with hex, type styles, spacing, radii), plus a `Kept difference` column (ΔE76 or px the existing token leaves, linking the `rec-design-theme-<n>` that removes it; else `—`).
 6. `## Strings`: a table `Key | Value | Screen | Existing key?`.
 7. `## Recommendations`: per recommendation its id, finding, why, and each option with changes and files; mark the current choice.
 8. `## Dependency changes`: a table, or "None".
-9. `## Design suggestions`, only when step 7 produced any.
+9. `## Design suggestions` (sorted by severity), only when step 7 produced any.
 10. `## Graph`: a fenced `mermaid` block starting `graph LR`, edges screens → components → tokens. Node ids use only letters, digits and `_` (`s_login`, `c_item_3`, `t_primary`); labels go in double quotes and contain no `"`, `#`, `;`, `<` or `>` (write hex as `3D5AFE`).
 
 ## 9. The approval gate
 
-**Eval mode** (`.sauces/eval-approve` exists): do not ask. Set `approved: true`, `approved_by: "eval"`, keep every recommendation at `keep` (and every design suggestion at its default), keep `structure.choice` equal to `recommended`, validate again, update the status line in `plan.md`, and say in your output: "Eval mode: plan auto-approved with every recommendation kept and the recommended structure."
+**Eval mode** (`.sauces/eval-approve` exists): do not ask. Set `approved: true`, `approved_by: "eval"`, keep every recommendation and design suggestion at `keep`, keep `structure.choice` equal to `recommended`, validate again, update the status line in `plan.md`, and say in your output: "Eval mode: plan auto-approved with every recommendation kept and the recommended structure."
 
 **Otherwise** stop and send one message, in this order:
 
 1. **Structure**: the recommended pattern with its reasons, then the alternatives (one line each with their folders).
 2. **Components**: a short summary of the table (counts by decision, the extends with their exact change, the new components with their paths).
-3. **Recommendations**: each id, one-line finding and its options; say every one defaults to `keep`.
+3. **Recommendations**: each id, one-line finding or design difference and its options; say every one defaults to `keep`.
 4. **Changes to existing shared code**: every `extend` (the exact change) and every theme change an option would make, each with what else uses it (grep the project for its callers or role usages). Say that with the defaults no existing theme value changes.
 5. **Dependency changes**: each package, version, scope and reason, or "None".
-6. **Design suggestions**: only when step 7 produced any.
-7. End with: "Reply 'approve' (optionally with choices like `rec-colors-1: centralize` or `structure: layered`), or tell me what to change."
+6. **Design suggestions**: one line each with its change; all default to `keep` (`design-review.md` section 5).
+7. End with: "Reply 'approve' (optionally with choices like `rec-colors-1: centralize`, `sug-1: apply` or `structure: layered`), or tell me what to change."
 
 Then end your turn. Do not continue to build.
 
 When the user replies:
 
-- **Explicit approval** ("approve", "yes", "looks good, go ahead"), with or without choices: record each choice (`recommendations[].choice` = the option id; `structure.choice`). Accept `rec colors-1` for `rec-colors-1`; an unknown id or option is a question back, not a guess. Add the `dependency_changes` entries a chosen option needs. If the structure changed, do not approve yet: recompute every item's `layer` and `path`, add the move-existing-files recommendation (`design-system-patterns.md` section 5, default `keep`), validate, and send one short confirmation round listing what moved and any package added; approve on the user's yes. Otherwise set `approved: true`, `approved_by: "user"`, validate, update `plan.md`, and confirm in one short message: what was chosen, every package a chosen option adds (say explicitly that it will be added), and the next step `/sauces:build`.
+- **Explicit approval** ("approve", "yes", "looks good, go ahead"), with or without choices: record each choice (`recommendations[].choice` = the option id; `design_suggestions[].choice`, applied per `design-review.md` section 5; `structure.choice`). Accept `rec colors-1` for `rec-colors-1`; an unknown id or option is a question back, not a guess. Add the `dependency_changes` entries a chosen option needs. If the structure changed, do not approve yet: recompute every item's `layer` and `path`, add the move-existing-files recommendation (`design-system-patterns.md` section 5, default `keep`), validate, and send one short confirmation round listing what moved and any package added; approve on the user's yes. Otherwise set `approved: true`, `approved_by: "user"`, validate, update `plan.md`, and confirm in one short message: what was chosen, every package a chosen option adds (say explicitly that it will be added), and the next step `/sauces:build`.
 - **Change request**: revise items, strings or choices as asked, keep `approved: false`, validate, rewrite `plan.md`, and send the approval message again with the changes highlighted.
 - **Anything else** (a question, an unclear reply): answer it and ask again. Never read silence, a question or "ok?" as approval.
 
-Rerunning `/sauces:plan` rewrites the plan and needs a fresh approval.
+Rerunning `/sauces:plan` rewrites the plan and needs fresh approval.
