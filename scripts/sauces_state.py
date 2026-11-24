@@ -5,11 +5,17 @@ Stdlib only. Subcommands:
   hash <paths...>                  print one sha256 over the sorted (path, bytes)
                                    pairs; folders are walked, .DS_Store and
                                    .sauces/ are skipped
-  mark <stage> [--inputs-hash H]   set a stage to done (H required for ingest)
+  mark <stage> [--inputs-hash H]   set a stage to done (H required for ingest).
+                                   Marking ingest with a hash different from the
+                                   stored one resets scan..report to pending.
   next --inputs-hash H             print the stage to resume at, or `done`
   reset-from <stage>               set that stage and all later ones to pending
   add-files generated|changed <paths...>
                                    append to generated_files / changed_files
+
+Hash keys: a folder argument contributes `<folder basename>/<posix relative
+path>` per file, a file argument contributes its basename. Keys do not depend
+on where the project lives, so moving it keeps the hash.
 
 Stages: ingest, scan, plan, build, verify, report. Only ingest is keyed on the
 design sources hash; a changed hash restarts the pipeline at ingest.
@@ -44,7 +50,10 @@ def state_path(root):
 def load(root):
     p = state_path(root)
     if p.exists():
-        st = json.loads(p.read_text())
+        try:
+            st = json.loads(p.read_text())
+        except ValueError:
+            fail(f"state.json is not valid JSON: {p}")
     else:
         st = {}
     st["version"] = 1
@@ -110,6 +119,10 @@ def cmd_mark(args):
     if args.stage == "ingest" and not args.inputs_hash:
         fail("mark ingest requires --inputs-hash")
     st = load(args.root)
+    old = st["stages"]["ingest"]["inputs_hash"]
+    if args.stage == "ingest" and old is not None and old != args.inputs_hash:
+        for s in STAGES[1:]:
+            st["stages"][s] = blank_stage()
     st["stages"][args.stage] = {
         "status": "done",
         "finished_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -160,7 +173,7 @@ def main():
             sp.add_argument("--root", default=".", help="target project (default .)")
         return sp
 
-    add("hash", cmd_hash, help="sha256 over files/folders").add_argument("paths", nargs="+")
+    add("hash", cmd_hash, help="sha256 over files/folders (keys: folder basename/relative path; file basename)").add_argument("paths", nargs="+")
     sp = add("mark", cmd_mark, help="mark a stage done")
     sp.add_argument("stage")
     sp.add_argument("--inputs-hash")

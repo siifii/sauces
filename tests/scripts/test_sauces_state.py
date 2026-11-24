@@ -88,9 +88,10 @@ def test_hash_stable_across_move_and_sensitive_to_content(tmp_path):
     (d / "sub").mkdir(parents=True)
     (d / "a.png").write_bytes(b"aaa")
     (d / "sub" / "b.txt").write_bytes(b"bbb")
-    (d / ".DS_Store").write_bytes(b"junk")
     h1 = run_script("sauces_state.py", "hash", str(d)).stdout.strip()
     assert len(h1) == 64
+    (d / ".DS_Store").write_bytes(b"junk")
+    assert run_script("sauces_state.py", "hash", str(d)).stdout.strip() == h1
     (d / ".sauces").mkdir()
     (d / ".sauces" / "x").write_bytes(b"ignored")
     moved = tmp_path / "two" / "designs"
@@ -105,3 +106,40 @@ def test_hash_missing_path_exits_2(tmp_path):
     r = run_script("sauces_state.py", "hash", str(tmp_path / "nope"))
     assert r.returncode == 2
     assert r.stderr.strip()
+
+
+def test_reingest_with_new_hash_resets_downstream(tmp_path):
+    for s in STAGES:
+        mark(tmp_path, s, "A")
+    mark(tmp_path, "ingest", "B")
+    assert nxt(tmp_path, "B") == "scan"
+    stages = json.loads((tmp_path / ".sauces/state.json").read_text())["stages"]
+    assert all(stages[s]["status"] == "pending" for s in STAGES[1:])
+
+
+def test_remark_ingest_same_hash_keeps_downstream(tmp_path):
+    for s in STAGES:
+        mark(tmp_path, s, "A")
+    mark(tmp_path, "ingest", "A")
+    assert nxt(tmp_path, "A") == "done"
+
+
+def test_hash_file_and_multiple_paths(tmp_path):
+    f = tmp_path / "f.pdf"
+    f.write_bytes(b"pdf")
+    d = tmp_path / "dir"
+    d.mkdir()
+    (d / "a").write_bytes(b"a")
+    hf = run_script("sauces_state.py", "hash", str(f)).stdout.strip()
+    hd = run_script("sauces_state.py", "hash", str(d)).stdout.strip()
+    hb = run_script("sauces_state.py", "hash", str(f), str(d)).stdout.strip()
+    assert len(hf) == 64 and len({hf, hd, hb}) == 3
+    assert hb == run_script("sauces_state.py", "hash", str(d), str(f)).stdout.strip()
+
+
+def test_corrupt_state_exits_2(tmp_path):
+    (tmp_path / ".sauces").mkdir()
+    (tmp_path / ".sauces/state.json").write_text("{nope")
+    r = mark(tmp_path, "scan")
+    assert r.returncode == 2
+    assert "state.json is not valid JSON" in r.stderr
