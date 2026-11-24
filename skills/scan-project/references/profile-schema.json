@@ -1,0 +1,212 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Sauces project profile (.sauces/project-profile.json)",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "existing",
+        "empty",
+        "ambiguous"
+      ]
+    },
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "root": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "flutter",
+              "android-compose",
+              "ios-swiftui",
+              "kmp-cmp"
+            ]
+          },
+          "architecture": {
+            "type": "string"
+          },
+          "state_management": {
+            "type": "string"
+          },
+          "di": {
+            "type": "string"
+          },
+          "theme": {
+            "type": "object",
+            "properties": {
+              "location": {
+                "type": "string"
+              },
+              "tokens_source": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "location",
+              "tokens_source"
+            ]
+          },
+          "localization": {
+            "type": "object",
+            "properties": {
+              "system": {
+                "type": "string",
+                "enum": [
+                  "arb",
+                  "string-catalog",
+                  "strings-xml",
+                  "compose-resources",
+                  "none"
+                ]
+              },
+              "rtl": {
+                "type": "boolean"
+              },
+              "locales": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "location": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "system",
+              "rtl",
+              "locales"
+            ]
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "params": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "has_preview": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "name",
+                "path",
+                "params",
+                "has_preview"
+              ]
+            }
+          },
+          "conventions": {
+            "type": "object",
+            "properties": {
+              "feature_folders": {
+                "type": "string"
+              },
+              "naming": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "feature_folders",
+              "naming"
+            ]
+          },
+          "screenshot_tooling": {
+            "type": "object",
+            "properties": {
+              "present": {
+                "type": "boolean"
+              },
+              "tool": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "present"
+            ]
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "area": {
+                  "type": "string",
+                  "enum": [
+                    "theme",
+                    "colors",
+                    "strings",
+                    "rtl",
+                    "previews",
+                    "screenshot-tests",
+                    "assets",
+                    "accessibility"
+                  ]
+                },
+                "detail": {
+                  "type": "string"
+                },
+                "paths": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "area",
+                "detail",
+                "paths"
+              ]
+            }
+          }
+        },
+        "required": [
+          "root",
+          "platform",
+          "architecture",
+          "state_management",
+          "theme",
+          "localization",
+          "components",
+          "conventions",
+          "screenshot_tooling",
+          "findings"
+        ]
+      }
+    }
+  },
+  "required": [
+    "version",
+    "mode",
+    "projects"
+  ],
+  "additionalProperties": false
+}

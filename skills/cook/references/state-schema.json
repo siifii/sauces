@@ -1,0 +1,219 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Sauces state (.sauces/state.json)",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "stages": {
+      "type": "object",
+      "properties": {
+        "ingest": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "done",
+                "pending"
+              ]
+            },
+            "finished_at": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "inputs_hash": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "finished_at",
+            "inputs_hash"
+          ]
+        },
+        "scan": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "done",
+                "pending"
+              ]
+            },
+            "finished_at": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "inputs_hash": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "finished_at",
+            "inputs_hash"
+          ]
+        },
+        "plan": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "done",
+                "pending"
+              ]
+            },
+            "finished_at": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "inputs_hash": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "finished_at",
+            "inputs_hash"
+          ]
+        },
+        "build": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "done",
+                "pending"
+              ]
+            },
+            "finished_at": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "inputs_hash": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "finished_at",
+            "inputs_hash"
+          ]
+        },
+        "verify": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "done",
+                "pending"
+              ]
+            },
+            "finished_at": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "inputs_hash": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "finished_at",
+            "inputs_hash"
+          ]
+        },
+        "report": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "done",
+                "pending"
+              ]
+            },
+            "finished_at": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "inputs_hash": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "finished_at",
+            "inputs_hash"
+          ]
+        }
+      },
+      "required": [
+        "ingest",
+        "scan",
+        "plan",
+        "build",
+        "verify",
+        "report"
+      ]
+    },
+    "generated_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "changed_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "version",
+    "stages",
+    "generated_files",
+    "changed_files"
+  ],
+  "additionalProperties": false
+}
