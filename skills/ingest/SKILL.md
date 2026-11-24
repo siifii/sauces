@@ -118,6 +118,8 @@ First delete any `.sauces/references/*.png` left from an earlier run that is not
 
 Read `${CLAUDE_PLUGIN_ROOT}/skills/ingest/references/images.md` and follow it. In short: when the Agent/Task tool is available, dispatch the `sauces:design-analyst` agent once per state reference (send them all in one message so they run in parallel). Otherwise analyze each image yourself with the same output contract. Store each returned `layout` object on its state as `layout`.
 
+Then build the optional `design_system` object (component candidates counted across all states, plus signals) per `${CLAUDE_PLUGIN_ROOT}/skills/ingest/references/design-system-signals.md`. Never fabricate Figma signals.
+
 ## 6. Tokens
 
 Build `tokens` from all sources:

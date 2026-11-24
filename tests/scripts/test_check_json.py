@@ -186,3 +186,67 @@ def test_state_schema(tmp_path):
     data["stages"]["scan"]["status"] = "running"
     r = check(tmp_path, _schema(SCHEMAS[3]), data)
     assert r.returncode == 1 and "stages.scan.status" in r.stdout
+
+
+def test_manifest_design_system_optional(tmp_path):
+    schema = load_schema()
+    ds = {
+        "signals": [
+            {"kind": "figma-naming", "detail": "pages named Atoms/Molecules", "evidence": "Atoms/Button"},
+            {"kind": "repetition", "detail": "text-field appears 6 times across 3 states"},
+        ],
+        "component_candidates": [
+            {"name": "text-field", "occurrences": 6, "screens": ["login"], "variants": ["outlined", "error"]},
+        ],
+    }
+    assert check(tmp_path, schema, manifest(design_system=ds)).returncode == 0
+    ds["signals"][0]["kind"] = "vibes"
+    r = check(tmp_path, schema, manifest(design_system=ds))
+    assert r.returncode == 1 and "design_system.signals[0].kind" in r.stdout
+    del ds["component_candidates"][0]["occurrences"]
+    ds["signals"][0]["kind"] = "library"
+    r = check(tmp_path, schema, manifest(design_system=ds))
+    assert r.returncode == 1 and "design_system.component_candidates[0]" in r.stdout
+
+
+def test_profile_component_structure(tmp_path):
+    proj = {
+        "root": ".", "platform": "flutter", "architecture": "feature-first-bloc",
+        "state_management": "bloc",
+        "theme": {"location": "lib/core/theme/app_theme.dart", "tokens_source": "none"},
+        "localization": {"system": "arb", "rtl": False, "locales": ["en"]},
+        "components": [], "conventions": {"feature_folders": "x", "naming": "y"},
+        "screenshot_tooling": {"present": False}, "findings": [],
+        "component_structure": {"pattern": "feature-first",
+                                "paths": ["lib/core/widgets", "lib/features"],
+                                "evidence": ["shared widgets in lib/core/widgets"]},
+    }
+    data = {"version": 1, "mode": "existing", "projects": [proj]}
+    assert check(tmp_path, _schema(SCHEMAS[1]), data).returncode == 0
+    proj["component_structure"]["pattern"] = "follow"
+    r = check(tmp_path, _schema(SCHEMAS[1]), data)
+    assert r.returncode == 1 and "projects[0].component_structure.pattern" in r.stdout
+
+
+def _structure(**over):
+    s = {"recommended": "follow", "choice": "follow",
+         "reasons": ["the project already has a shared core", "one screen"],
+         "options": [{"id": "follow", "label": "Follow the project",
+                      "folders": ["lib/core/widgets", "lib/features/<f>/view"]},
+                     {"id": "atomic", "label": "Atomic Design",
+                      "folders": ["lib/design_system/atoms"]}]}
+    s.update(over)
+    return s
+
+
+def test_plan_structure_and_layer(tmp_path):
+    plan = _plan(structure=_structure())
+    plan["items"][0]["layer"] = "organisms"
+    assert check(tmp_path, _schema(SCHEMAS[2]), plan).returncode == 0
+    assert check(tmp_path, _schema(SCHEMAS[2]), _plan()).returncode == 0  # structure stays optional
+    r = check(tmp_path, _schema(SCHEMAS[2]), _plan(structure=_structure(recommended="custom")))
+    assert r.returncode == 1 and "structure.recommended" in r.stdout
+    bad = _plan()
+    bad["items"][0]["layer"] = 3
+    r = check(tmp_path, _schema(SCHEMAS[2]), bad)
+    assert r.returncode == 1 and "items[0].layer" in r.stdout

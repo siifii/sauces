@@ -64,6 +64,7 @@ Fill every required field of the schema:
 - `localization`: `system` from the schema enum (`none` when there is no localization), `locales` as language tags found on disk (`en`, `ar`, `pt-BR`), `location` as the folder holding the source string files, and `rtl` (see below).
 - `components`: the reusable UI building blocks the new UI could reuse. Each entry has `name`, `path`, `params` (constructor or function parameter names, in declaration order, without framework plumbing such as `key`/`super.key`/`modifier` defaults unless the project's API exposes them deliberately) and `has_preview` (true only when a preview exists for that component: `@Preview`, `#Preview`, a Widgetbook use case, …). Exclude pages/screens, private classes, generated code and test code. The reference explains how to tell a page from a component.
 - `conventions.feature_folders`: one sentence describing where features live, with a concrete pattern (for example `lib/features/<feature>/{cubit,view}`). `conventions.naming`: the file and type naming you observed (for example `snake_case files; App-prefixed shared widgets; <Feature>Page, <Feature>Cubit, <Feature>State`).
+- `component_structure` (optional, write it whenever the platform reference has heuristics for it): how UI components are organized today. `pattern` is `atomic`, `layered`, `feature-first`, `custom` (a recognisable structure that is none of those) or `none` (no shared components at all); `paths` are the folders that define it; `evidence` holds one short sentence per observation that led to the pattern. Never move or rename anything to fit a pattern.
 - `screenshot_tooling`: `present: true` and `tool` only when the tooling is actually used or declared (dependency or test code). Otherwise `present: false` with no `tool`.
 
 ### RTL
@@ -110,7 +111,7 @@ End with a short human summary, one line per project:
 - platform and root, architecture, state management (and DI if any);
 - theme location and token source;
 - localization system, locales, RTL yes/no;
-- number of reusable components found;
+- number of reusable components found, and the component structure pattern;
 - number of findings, listed by id and one-line detail.
 
 Mention any platform scanned without a detailed reference, and, in `ambiguous` mode, the question (or the eval-mode choice). Do not paste the JSON.

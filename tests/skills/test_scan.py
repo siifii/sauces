@@ -50,6 +50,9 @@ def test_scan_flutter_fixture(tmp_path):
     assert any("lib/core/widgets/app_card.dart" in f["paths"] for f in color_findings), (
         project["findings"]
     )
+    structure = project.get("component_structure") or {}
+    assert structure.get("pattern") == "feature-first", project
+    assert any(p.startswith("lib/core/widgets") for p in structure.get("paths", [])), structure
     assert git_status(workdir) == before
 
 

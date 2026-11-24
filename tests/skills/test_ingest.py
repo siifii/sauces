@@ -1,6 +1,5 @@
 """Headless tests for the ingest skill (marker: skill)."""
 import json
-import os
 
 import pytest
 
@@ -12,14 +11,6 @@ FIGMA_URL = "https://www.figma.com/design/AbCdEf123/Login?node-id=1-2"
 FIGMA_REASON = "No Figma MCP connected. Connect the Figma connector or the plugin's figma server."
 
 pytestmark = [pytest.mark.skill, needs_claude]
-
-
-@pytest.fixture(autouse=True)
-def venv_python_first(monkeypatch):
-    """The skill runs `python3 -I` scripts that need Pillow + numpy; use the dev venv's python3."""
-    venv_bin = REPO / ".venv" / "bin"
-    if venv_bin.is_dir():
-        monkeypatch.setenv("PATH", f"{venv_bin}{os.pathsep}{os.environ.get('PATH', '')}")
 
 
 def hex_to_lab(hex_color):
@@ -117,6 +108,13 @@ def test_ingest_login(tmp_path):
     texts = layout_texts(states["default"].get("layout", {}))
     assert any("Welcome back" in t for t in texts), texts
     assert any("Sign in" in t for t in texts), texts
+    candidates = manifest.get("design_system", {}).get("component_candidates", [])
+    by_kind = {}
+    for c in candidates:
+        key = c["name"].lower().replace("-", "").replace("_", "").replace(" ", "")
+        by_kind[key] = max(by_kind.get(key, 0), c["occurrences"])
+    assert by_kind.get("textfield", 0) >= 3, candidates
+    assert by_kind.get("button", 0) >= 3, candidates
 
 
 def test_ingest_figma_without_mcp(tmp_path):

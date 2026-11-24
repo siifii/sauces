@@ -6,7 +6,9 @@ Import any of these in test files with `from conftest import ...`; that works
 because pytest.ini sets `pythonpath = tests`.
 """
 import json
+import os
 import shutil
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -41,7 +43,12 @@ def fixture_copy(name: str, tmp_path: Path) -> Path:
 
 
 def run_skill(workdir: Path, prompt: str, timeout: int = 1800) -> subprocess.CompletedProcess:
-    """Run headless claude with the plugin against workdir (use fixture_copy dirs only)."""
+    """Run headless claude with the plugin against workdir (use fixture_copy dirs only).
+
+    When the dev venv exists, its bin/ goes first on PATH so the plugin's `python3 -I`
+    scripts find Pillow + numpy. claude runs in its own process group; on timeout the whole
+    group is killed (so no hung claude or helper outlives the test) and TimeoutExpired is raised.
+    """
     sauces = Path(workdir) / ".sauces"
     sauces.mkdir(parents=True, exist_ok=True)
     (sauces / "eval-approve").write_text("")
@@ -51,7 +58,22 @@ def run_skill(workdir: Path, prompt: str, timeout: int = 1800) -> subprocess.Com
         "--permission-mode", "bypassPermissions",
         "--strict-mcp-config", "--mcp-config", json.dumps({"mcpServers": {}}),
     ]
-    return subprocess.run(cmd, cwd=workdir, capture_output=True, text=True, timeout=timeout)
+    env = dict(os.environ)
+    venv_bin = REPO / ".venv" / "bin"
+    if venv_bin.is_dir():
+        env["PATH"] = f"{venv_bin}{os.pathsep}{env.get('PATH', '')}"
+    proc = subprocess.Popen(cmd, cwd=workdir, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            text=True, env=env, start_new_session=True)
+    try:
+        out, err = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        out, err = proc.communicate()
+        raise subprocess.TimeoutExpired(cmd, timeout, output=out, stderr=err)
+    return subprocess.CompletedProcess(cmd, proc.returncode, out, err)
 
 
 def has_tool(name: str) -> bool:

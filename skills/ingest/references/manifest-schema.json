@@ -207,6 +207,76 @@
           "name"
         ]
       }
+    },
+    "design_system": {
+      "type": "object",
+      "properties": {
+        "signals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "figma-naming",
+                  "component-set",
+                  "variables",
+                  "library",
+                  "repetition"
+                ]
+              },
+              "detail": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "detail"
+            ]
+          }
+        },
+        "component_candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "occurrences": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "screens": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "variants": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "name",
+              "occurrences",
+              "screens",
+              "variants"
+            ]
+          }
+        }
+      },
+      "required": [
+        "signals",
+        "component_candidates"
+      ]
     }
   },
   "required": [

@@ -54,3 +54,14 @@ Call `get_variable_defs` on each frame (or the parent node once). It returns nam
 - Text styles (font family, size, weight, line height) → `tokens.typography`, named from the style name (`Title/Large` → `title-large`).
 
 Record the source with `status: ok` and, when only part of it was usable, a `reason` saying which frames were skipped and why.
+
+## 5. Design-system signals
+
+Collect these while reading the file and add them to `design_system.signals` (contract in `${CLAUDE_PLUGIN_ROOT}/skills/ingest/references/design-system-signals.md`). Record only what a tool returned in this run. Return formats differ between server versions: check what you actually get, and skip a signal rather than guess.
+
+- **Naming (`figma-naming`).** From `get_metadata` on the page (or the file's top level when you have no node id), look at page, section, frame and component names. Atomic terms (`Atoms`, `Molecules`, `Organisms`, `Templates`, also as path prefixes like `Atoms/Button`) and layered terms (`Foundations`, `Tokens`, `Components`, `Patterns`) are signals. One signal per vocabulary found, with up to three example names as `evidence`.
+- **Component sets (`component-set`).** A component set is a component whose variants are named `Property=Value` (for example `State=Error, Size=Large`); the metadata may show it as a component-set node with variant children, and instances often carry the variant string in their name. One signal per set: `"Button set with 6 variants (State × Size)"`. Use the set's name as a Figma component name for the matching candidate.
+- **Variables (`variables`).** From `get_variable_defs`, count variables and, when the result shows them, collections. Call them tiered when there is a primitive layer (names or collections like `primitive/`, `core/`, `base/`, `palette/`, `ref/`) and a semantic layer that refers to it or is named by role (`semantic/`, `sys/`, `color/primary`, `surface`, `on-surface`). Detail example: `"2 collections: primitives (24), semantic (18); tiered"`. If the tool returns only flat name → value pairs, report the count and say the tiering is inferred from names.
+- **Library (`library`).** If available on the connected server, use `get_libraries` (libraries enabled for the file) or `search_design_system` (components and variables from linked libraries); some versions of `get_design_context` also mark components that come from a library. Record a signal only when a result shows that the frames use library components or variables, naming the library.
+
+If `get_metadata` is the only working tool, record naming and component sets only. If Figma is unreadable, record no Figma signals at all.

@@ -53,3 +53,7 @@ Layouts keep raw values. Tokens get snapped values:
 3. A fully rounded shape (pill or circle, radius ≥ half its height) records `radius` as half its height in the layout, and that value snapped in `radii`.
 4. De-duplicate, sort ascending, and write `tokens.spacing` and `tokens.radii`.
 5. When a raw value differs from its snapped value by more than 1 px, add it to the layout node's style as `"raw_note": "gap 14 → 16"`, so `plan` can decide whether the design meant it.
+
+## Component candidates
+
+Once every state has its `layout`, count the `component` nodes across all states and screens into `design_system.component_candidates` and add `repetition` signals, as `${CLAUDE_PLUGIN_ROOT}/skills/ingest/references/design-system-signals.md` §1–2 describes. Images never produce Figma signals.

@@ -186,6 +186,38 @@
                 "paths"
               ]
             }
+          },
+          "component_structure": {
+            "type": "object",
+            "properties": {
+              "pattern": {
+                "type": "string",
+                "enum": [
+                  "atomic",
+                  "layered",
+                  "feature-first",
+                  "custom",
+                  "none"
+                ]
+              },
+              "paths": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "pattern",
+              "paths",
+              "evidence"
+            ]
           }
         },
         "required": [
