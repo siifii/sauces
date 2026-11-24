@@ -1,0 +1,9 @@
+{
+  "name": "sauces",
+  "version": "0.1.0",
+  "description": "Turn design sources (Figma, PNG, PDF, SVG) into production UI that fits your existing mobile project (Android, iOS, KMP/CMP, Flutter), verify it visually, and get a report. We make the sauce; you make the sandwich.",
+  "author": { "name": "Kareem Alsaifi (SiliconSage)" },
+  "homepage": "https://github.com/siifii",
+  "license": "MIT",
+  "keywords": ["design-to-code", "figma", "flutter", "jetpack-compose", "swiftui", "kmp", "compose-multiplatform", "mobile", "design-system"]
+}
