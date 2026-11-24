@@ -46,8 +46,10 @@ def run_skill(workdir: Path, prompt: str, timeout: int = 1800) -> subprocess.Com
     """Run headless claude with the plugin against workdir (use fixture_copy dirs only).
 
     When the dev venv exists, its bin/ goes first on PATH so the plugin's `python3 -I`
-    scripts find Pillow + numpy. claude runs in its own process group; on timeout the whole
-    group is killed (so no hung claude or helper outlives the test) and TimeoutExpired is raised.
+    scripts find Pillow + numpy. claude runs in its own process group; on timeout (or any
+    other exception, such as KeyboardInterrupt) the whole group is killed, so no hung claude
+    or helper outlives the test, and the exception is re-raised. The process-group kill is
+    POSIX-only (start_new_session / os.killpg).
     """
     sauces = Path(workdir) / ".sauces"
     sauces.mkdir(parents=True, exist_ok=True)
@@ -66,13 +68,18 @@ def run_skill(workdir: Path, prompt: str, timeout: int = 1800) -> subprocess.Com
                             text=True, env=env, start_new_session=True)
     try:
         out, err = proc.communicate(timeout=timeout)
-    except subprocess.TimeoutExpired:
+    except BaseException as exc:
         try:
             os.killpg(proc.pid, signal.SIGKILL)
         except ProcessLookupError:
             pass
-        out, err = proc.communicate()
-        raise subprocess.TimeoutExpired(cmd, timeout, output=out, stderr=err)
+        try:
+            out, err = proc.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            out, err = None, None
+        if isinstance(exc, subprocess.TimeoutExpired):
+            raise subprocess.TimeoutExpired(cmd, timeout, output=out, stderr=err) from exc
+        raise
     return subprocess.CompletedProcess(cmd, proc.returncode, out, err)
 
 

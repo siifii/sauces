@@ -94,7 +94,7 @@ Decide how shared UI is organized from the folder layout under `lib/` (and `pack
 |---|---|---|
 | `atomic` | at least two of `atoms/`, `molecules/`, `organisms/`, `templates/` anywhere under `lib/` or `packages/*/lib/` (for example `lib/design_system/atoms/`, `lib/ui/molecules/`) | the parent folder and each atomic folder found |
 | `layered` | a design-system root (`lib/design_system/`, `lib/ds/`, `lib/ui_kit/`, or a package such as `packages/ui/`, `packages/design_system/`) that contains at least two of `tokens/`, `foundations/`, `components/`, `patterns/` (or a `theme/` plus `components/`) | the root and each layer folder found |
-| `feature-first` | a shared core (`lib/core/widgets/`, `lib/common/widgets/`, `lib/shared/widgets/`, `lib/src/common_widgets/`) beside per-feature folders (`lib/features/<f>/`, `lib/src/features/<f>/`, `lib/modules/<f>/`) | the shared widget folder, the theme folder if any, and the features folder |
+| `feature-first` | a shared core (`lib/core/widgets/`, `lib/common/widgets/`, `lib/shared/widgets/`, `lib/widgets/`, `lib/src/common_widgets/`) beside per-feature folders (`lib/features/<f>/`, `lib/src/features/<f>/`, `lib/modules/<f>/`) | the shared widget folder, the theme folder if any, and the features folder |
 | `custom` | shared widgets exist but follow none of the above (for example everything in `lib/widgets/` with layer-first `lib/screens/`, or `clean-architecture` features with widgets under `presentation/widgets/` only) | the folders that hold the shared widgets and the screens |
 | `none` | no shared widget folder and no reusable components (every widget lives inside its page file) | `[]` |
 
