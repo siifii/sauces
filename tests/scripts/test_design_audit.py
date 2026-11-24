@@ -170,3 +170,164 @@ def test_audit_cli_output_flag_and_bad_manifest(tmp_path):
     assert run_script("design_audit.py", "--manifest", str(tmp_path / "missing.json")).returncode == 2
     bad.write_text(json.dumps({"version": 1}))
     assert run_script("design_audit.py", "--manifest", str(bad)).returncode == 2
+
+
+def _screen(layout, states=("default",)):
+    return _manifest(states=[_state(s, layout) for s in states])
+
+
+def _col(*children, kind="column", **style):
+    return {"type": kind, "confidence": 1, "style": {"background": "#FFFFFF", **style},
+            "children": list(children)}
+
+
+def _text(text, **style):
+    return {"type": "text", "text": text, "confidence": 1, "style": style}
+
+
+def _comp(kind, variant="default", text=None, children=None, **style):
+    n = {"type": "component", "component": {"kind": kind, "variant": variant},
+         "confidence": 1, "style": style}
+    if text:
+        n["text"] = text
+    if children:
+        n["children"] = children
+    return n
+
+
+def test_large_text_threshold():
+    # #949494 on white is about 3.03:1: passes as large text, fails as normal text
+    grey = "#949494"
+    assert 3.0 <= da.contrast_ratio(grey, "#FFFFFF") < 4.5
+    cases = [(24, 400, False), (23, 400, True), (18.66, 700, False), (18.66, 600, True)]
+    for size, weight, flagged in cases:
+        hits = da.text_contrast(_screen(_col(_text("T", color=grey, size=size, weight=weight))))
+        assert bool(hits) is flagged, (size, weight, hits)
+
+
+def test_alpha_text_is_composited():
+    assert da.contrast_ratio("#00000080", "#FFFFFF") == pytest.approx(
+        da.contrast_ratio("#7F7F7F", "#FFFFFF"), abs=0.01)
+    assert da.composite("#00000080", "#FFFFFF") == "#7F7F7F"
+    hits = da.text_contrast(_screen(_col(_text("Hint", color="#0000004D", size=16))))
+    assert hits and hits[0]["contrast_ratio"] < 3, hits
+    # translucent background over a dark parent
+    layout = _col(_col(_text("On scrim", color="#FFFFFF", size=16), background="#FFFFFF33"),
+                  background="#000000")
+    assert da.text_contrast(_screen(layout)) == []
+
+
+def test_text_color_inherited_from_ancestor():
+    layout = _col(_col(_text("Muted", size=16), color="#AAAAAA", background="#FFFFFF"))
+    hits = da.text_contrast(_screen(layout))
+    assert [h["color"] for h in hits] == ["#AAAAAA"], hits
+    assert da.text_contrast(_screen(_col(_text("No color", size=16)))) == []
+
+
+def test_disabled_text_exempt():
+    btn = _comp("button", "disabled", "Sign in", height=52, background="#E0E0E0",
+                color="#BDBDBD", size=16)
+    assert da.text_contrast(_screen(_col(btn))) == []
+    btn["component"]["variant"] = "filled"
+    assert da.text_contrast(_screen(_col(btn)))
+
+
+def test_border_contrast():
+    field = _comp("text-field", "outlined", "Email", height=56,
+                  border={"width": 1, "color": "#DDDDDD"})
+    hits = da.border_contrast(_screen(_col(field)))
+    assert hits and hits[0]["contrast_ratio"] < 3 and hits[0]["background"] == "#FFFFFF", hits
+    field["style"]["border"]["color"] = "#79747E"
+    assert da.border_contrast(_screen(_col(field))) == []
+
+
+def test_link_line_height_fallback():
+    link = _comp("link", "text", "Forgot password?", line_height=20, color="#3D5AFE", size=14)
+    hits = da.small_touch_targets(_screen(_col(link)))
+    assert hits and hits[0]["height"] == 20 and hits[0]["measured_from"] == "line_height", hits
+
+
+def test_text_field_icon_is_a_target():
+    eye = {"type": "component", "component": {"kind": "icon", "variant": "default"},
+           "description": "eye (show password)", "confidence": 1,
+           "style": {"width": 24, "height": 24}}
+    field = _comp("text-field", "outlined", "Password", children=[eye], height=56)
+    hits = da.small_touch_targets(_screen(_col(field)))
+    assert [h["kind"] for h in hits] == ["icon"], hits
+    lone_icon = dict(eye)
+    assert da.small_touch_targets(_screen(_col(lone_icon))) == []  # decorative icon
+
+
+def test_touch_target_severity_uses_wcag_spacing():
+    def run(gap):
+        row = _col(_comp("icon-button", text="A", width=20, height=20),
+                   _comp("icon-button", text="B", width=20, height=20), kind="row", gap=gap)
+        findings, _ = da.audit(_screen(row))
+        return [f for f in findings if f["measured"].get("kind") == "icon-button"]
+
+    close = run(0)
+    assert close and all(f["severity"] == "high" for f in close), close
+    assert close[0]["measured"]["wcag_spacing"] == "fails"
+    spaced = run(8)
+    assert spaced and all(f["severity"] == "medium" for f in spaced), spaced
+    assert spaced[0]["measured"]["wcag_spacing"] == "passes"
+    link = _comp("link", "text", "Forgot password?", line_height=20)
+    findings, _ = da.audit(_screen(_col(link)))
+    assert [f["severity"] for f in findings if f["measured"].get("kind") == "link"] == ["medium"]
+
+
+def test_pill_radius_exempt():
+    pill = _comp("button", "filled", "Go", height=52, radius=26, background="#3D5AFE",
+                 color="#FFFFFF", size=16)
+    m = _screen(_col(pill))
+    m["tokens"]["radii"] = []
+    findings, _ = da.audit(m)
+    assert not [f for f in findings if f["measured"].get("value") == 26], findings
+    pill["style"]["height"] = 80  # radius 26 on an 80 px box is a corner, off-grid
+    findings, _ = da.audit(_screen(_col(pill)))
+    assert [f for f in findings if f["measured"].get("value") == 26]
+
+
+def test_mixed_radii():
+    cards = [_comp("card", radius=r, height=100) for r in (4, 8, 12)]
+    m = _screen(_col(*cards))
+    m["tokens"]["radii"] = []
+    assert da.mixed_radii(m) is None
+    cards.append(_comp("card", radius=20, height=100))
+    cards.append(_comp("chip", radius=16, height=32))  # pill: excluded
+    r = da.mixed_radii(_screen(_col(*cards)))
+    assert r == {"radii": [4, 8, 12, 20], "count": 4, "maximum": 3}, r
+    findings, _ = da.audit(_screen(_col(*cards)))
+    assert any(f["measured"].get("radii") == [4, 8, 12, 20] for f in findings)
+
+
+def test_type_sprawl():
+    ok = _col(*[_text(str(s), size=s, color="#000000") for s in (28, 16, 14, 12)])
+    assert da.type_sprawl(_screen(ok)) == {}
+    many = _col(*[_text(str(s), size=s, weight=w, color="#000000")
+                  for s, w in ((28, 600), (22, 400), (16, 400), (16, 600), (14, 500),
+                               (12, 400), (11, 500))])
+    out = da.type_sprawl(_screen(many))
+    assert out["login"]["count"] == 7 and out["login"]["off_scale_sizes"] == [], out
+    off = _col(*[_text(str(s), size=s, color="#000000") for s in (18, 19, 16)])
+    assert da.type_sprawl(_screen(off))["login"]["off_scale_sizes"] == [18, 19]
+
+
+def test_grid_finding_also_in():
+    m = _screen(_login_layout(gap=14), states=("default", "error"))
+    findings, _ = da.audit(m)
+    grid = [f for f in findings if f["measured"].get("value") == 14]
+    assert len(grid) == 1, grid
+    assert grid[0]["state"] == "default" and grid[0]["also_in"] == ["login/error"], grid
+
+
+def test_merged_findings_list_screen_state():
+    m = _screen(_login_layout(button_height=36), states=("default", "loading"))
+    findings, _ = da.audit(m)
+    btn = [f for f in findings if f["measured"].get("height") == 36]
+    assert len(btn) == 1 and btn[0]["also_in"] == ["login/loading"], btn
+
+
+def test_category_sort_order():
+    assert da.CATEGORIES == ["accessibility", "ux", "states", "localization", "platform",
+                             "consistency"]
