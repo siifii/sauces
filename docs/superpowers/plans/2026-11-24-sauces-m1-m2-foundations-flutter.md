@@ -577,3 +577,21 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
 - [ ] **Step 4:** Run all tests: `.venv/bin/python -m pytest -v` and `.venv/bin/python -m pytest -m skill -v`. Expected: PASS.
 - [ ] **Step 5:** **Milestone 2 exit:** `.venv/bin/python scripts/eval.py --run --fixtures flutter-bloc,empty` passes both rows. Commit `eval.md` as the baseline, and `claude plugin validate .` passes.
 - [ ] **Step 6:** Commit `feat: cook orchestration and eval; milestone 2`.
+
+### Task 18: Hardening and test matrix (added 2026-11-24 at the user's request: "test it well")
+
+**Goal:** Prove Sauces holds up beyond the one fixture and one design it was built against, and that LLM-driven stages are stable across runs.
+
+**Files:**
+- Create: `examples/targets/flutter-riverpod/` (Riverpod + go_router, `lib/src/` layout, **no** localization, a `functions/` Firebase folder beside the app, one hard-coded string), `examples/targets/flutter-atomic/` (BLoC, `lib/design_system/{atoms,molecules,organisms}`, ARB en only, no RTL), `examples/designs/onboarding/` (3 screens: welcome, list with items, empty list; plus a dark-mode variant of welcome; rendered like Task 9), `tests/skills/test_matrix.py`, `scripts/dev/stability.sh`, `docs/superpowers/test-report-m2.md`
+- Modify: `scripts/eval.py` (fixture × design matrix)
+
+- [ ] **Step 1: Fixture tests first:** each new fixture builds (`flutter analyze`, `flutter test`) and has exactly its documented lint gaps (pure-Python test, like Task 8).
+- [ ] **Step 2: Matrix skill tests** (`test_matrix.py`, marker `skill`):
+  - riverpod fixture: scan gives `state_management == "riverpod"`, `localization.system == "none"`, mode `existing` (NOT `ambiguous` despite `functions/`), a `strings` finding; plan recommends `follow`; build puts strings in a feature strings class (design §5.2) and lint passes; a recommendation offers proper localization.
+  - atomic fixture: scan gives `component_structure.pattern == "atomic"`; plan recommends `follow` and new components land in the atomic layers.
+  - onboarding design into the **empty** target: ingest finds 3 screens and a `dark` state; create mode recommends a pattern from the scoring table with reasons; design suggestions include a missing-state finding; scaffold + build + verify pass the eval gates.
+- [ ] **Step 3: Stability:** `scripts/dev/stability.sh` runs every skill test 3× and reports pass rate per test. Target 100%; anything flaky gets its root cause fixed (tighter instructions or a less brittle assertion), never a retry loop.
+- [ ] **Step 4: Real-world smoke (read-only):** shallow-clone 3 public open-source Flutter apps of different styles into the scratch folder (never committed), run `scan-project` and `plan` (eval mode) on each, and record in `test-report-m2.md`: valid JSON (yes/no), detected stack vs actual, findings quality, any crash or misleading output. Every real defect found becomes a fix with a regression test.
+- [ ] **Step 5: Visual check:** for every rendered screen in the matrix, the controller views rendered.png beside the reference and diff.png and records a one-line judgement in the test report (a score ≥ 90 that still looks wrong is a defect).
+- [ ] **Step 6:** `scripts/eval.py --run` over the full matrix; commit `eval.md` and `test-report-m2.md`; commit `test: hardening matrix, stability and real-world smoke`.
