@@ -8,11 +8,12 @@ Measure in logical px. Pick the DPR from the image width:
 
 | Image width | Assume DPR | Logical width |
 |---|---|---|
+| 1080 (common Android) | 2.625 (or 2.75 / 3 if the content says so) | ≈ 411 |
 | 1170–1320 | 3 | 390–440 |
 | 720–900 (e.g. 780) | 2 | 360–450 |
 | 320–450 | 1 | same |
 
-Anything else: choose the DPR that gives a logical width between 320 and 450 (tablets: up to 1024). A PDF raster's DPR follows from its width the same way. Record the assumption on the layout root (`"assumed_dpr": 2`) and mention it in the summary.
+Anything else: choose the DPR, fractional if needed, that gives a logical width between 320 and 450 (tablets: up to 1024). A PDF raster's DPR follows from its width the same way. The DPR is a guess: record it on the layout root (`"assumed_dpr": 2`) and mention it in the summary. `agents/design-analyst.md` uses the same table.
 
 ## Dispatching design-analyst
 
@@ -34,7 +35,7 @@ Without the Agent tool, read each image and produce the same JSON yourself, foll
 
 ## The layout contract (summary)
 
-Node: `{type, children?, text?, style?, component?, confidence}`.
+Node: `{type, children?, text?, style?, component?, confidence}`. `children` is present only on container nodes (`column`, `row`, `stack`, and components that contain parts).
 
 - `type`: `column`, `row`, `stack` (overlapping children), `text`, `image`, `component`.
 - `text`: the exact visible string (for `text` nodes and labelled components).

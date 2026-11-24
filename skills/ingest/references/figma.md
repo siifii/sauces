@@ -28,8 +28,11 @@ Use that `reason` exactly. If the tools exist but every call fails (auth error, 
 | `figma.com/design/<fileKey>/<name>?node-id=<a>-<b>` | `<fileKey>` | `<a>:<b>` (replace `-` with `:`) |
 | `figma.com/file/<fileKey>/<name>?node-id=...` (legacy) | `<fileKey>` | same conversion |
 | `figma.com/design/<fileKey>/branch/<branchKey>/<name>` | `<branchKey>` | from `node-id` |
+| `figma.com/proto/<fileKey>/<name>?node-id=...` (prototype link) | `<fileKey>` | from `node-id` (the frame shown) |
+| `figma.com/spec/<fileKey>/<name>?node-id=...` (Dev Mode spec link) | `<fileKey>` | from `node-id` |
 | `figma.com/make/<makeFileKey>/<name>` | `<makeFileKey>` | none |
-| `figma.com/board/...`, `figma.com/slides/...` | FigJam / Slides: not UI designs. Mark `unreadable` with `reason: "Not a Figma design file (FigJam/Slides)."` |
+| `figma.com/board/...` | FigJam. Mark `unreadable` with `reason: "FigJam boards are not UI designs."` |
+| `figma.com/slides/...` | Slides. Mark `unreadable` with `reason: "Figma Slides files are not UI designs."` |
 
 The `node-id` query value may be URL-encoded (`1%3A2`); decode it first. Without a node id, call `get_metadata` on the file/page and take its top-level frames.
 
@@ -38,7 +41,7 @@ The `node-id` query value may be URL-encoded (`1%3A2`); decode it first. Without
 1. `get_metadata` on the node. If it is a page or section, its direct child frames are the screens; if it is a single frame, that frame is the screen.
 2. For each frame: the frame name gives screen and state, using the same naming rules as files (`Login--Error`, `Login / Error`, `Login – error` → screen `login`, state `error`). Frames with the same base name are states of one screen. Variant properties such as `State=Error` also name the state.
 3. `get_design_context` on each frame: use its structure, text and styles to build the state's `layout` with the contract in `images.md` (sizes in Figma are already logical px; set `assumed_dpr` to 1 relative to the frame).
-4. `get_screenshot` on each frame for the reference PNG. If the result includes a downloadable image URL, fetch it into `.sauces/references/<screen>--<state>.png` with `curl -fsSL`. If it comes back only as an inline image you cannot write to disk, say so: keep the layout, do not create the state (a state needs a reference file), set `reason: "screenshot not saved to disk; export the frame as PNG and ingest it"` with `status: ok`, and tell the user in the summary. The exact screenshot return format differs between server versions; check what you get rather than assuming.
+4. `get_screenshot` on each frame for the reference PNG. If the result includes a downloadable image URL, fetch it into `.sauces/references/<screen>--<state>.png` with `curl -fsSL`. If it comes back only as an inline image you cannot write to disk, say so: keep the layout, do not create the state (a state needs a reference file), set `reason: "screenshot not saved to disk; export the frame as PNG and ingest it"` with `status: ok`, and tell the user in the summary that `verify` needs PNG exports of those frames. The exact screenshot return format differs between server versions; check what you get rather than assuming.
 
 A PNG export of a frame also given in the arguments is a duplicate (SKILL.md §3): keep the higher-resolution file.
 

@@ -48,6 +48,33 @@ def layout_texts(node):
     return []
 
 
+def nodes(node):
+    """Every node dict in a layout tree (depth first)."""
+    if not isinstance(node, dict):
+        return []
+    found = [node]
+    for child in node.get("children") or []:
+        found += nodes(child)
+    return found
+
+
+def left_padding(style):
+    pad = (style or {}).get("padding")
+    if isinstance(pad, (int, float)):
+        return pad
+    if isinstance(pad, list) and len(pad) == 4:
+        return pad[3]
+    if isinstance(pad, list) and len(pad) == 2:
+        return pad[1]
+    return None
+
+
+def copy_login_pngs(folder):
+    folder.mkdir()
+    for state in ("default", "error", "loading"):
+        (folder / f"login--{state}.png").write_bytes((LOGIN / f"login--{state}.png").read_bytes())
+
+
 def ingest(workdir, sources):
     result = run_skill(workdir, "/sauces:ingest " + " ".join(f'"{s}"' for s in sources))
     manifest_path = workdir / ".sauces" / "manifest.json"
@@ -95,9 +122,7 @@ def test_ingest_login(tmp_path):
 def test_ingest_figma_without_mcp(tmp_path):
     workdir = fixture_copy("flutter-bloc", tmp_path)
     png_folder = tmp_path / "pngs"
-    png_folder.mkdir()
-    for state in ("default", "error", "loading"):
-        (png_folder / f"login--{state}.png").write_bytes((LOGIN / f"login--{state}.png").read_bytes())
+    copy_login_pngs(png_folder)
     manifest, result = ingest(workdir, [FIGMA_URL, str(png_folder)])
 
     assert result.returncode == 0, result.stdout + result.stderr
@@ -107,3 +132,26 @@ def test_ingest_figma_without_mcp(tmp_path):
     assert "Figma" in figma[0].get("reason", ""), figma[0]
     assert FIGMA_REASON in figma[0]["reason"], figma[0]
     login_screen(manifest, workdir)
+
+
+def test_ingest_pngs_only_measures(tmp_path):
+    """Only the three PNGs (no description.md, no src/): values must be measured from pixels."""
+    workdir = fixture_copy("flutter-bloc", tmp_path)
+    png_folder = tmp_path / "pngs"
+    copy_login_pngs(png_folder)
+    manifest, _ = ingest(workdir, [str(png_folder)])
+
+    states = login_screen(manifest, workdir)
+    layout = states["default"].get("layout", {})
+    texts = layout_texts(layout)
+    assert any("Welcome back" in t for t in texts), texts
+    all_nodes = nodes(layout)
+    buttons = [n for n in all_nodes if (n.get("component") or {}).get("kind") == "button"]
+    assert buttons, layout
+    heights = [(b.get("style") or {}).get("height") for b in buttons]
+    assert any(isinstance(h, (int, float)) and 46 <= h <= 58 for h in heights), heights
+    pads = [left_padding(n.get("style")) for n in all_nodes]
+    assert any(isinstance(p, (int, float)) and 20 <= p <= 28 for p in pads), pads
+    assert any(delta_e(c["hex"], "#3D5AFE") <= 5 for c in manifest["tokens"]["colors"]), (
+        manifest["tokens"]["colors"]
+    )
