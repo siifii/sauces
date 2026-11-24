@@ -42,7 +42,7 @@ Leave `di` out when none of these is used (constructor-only wiring, as in many s
 
 ## Localization (`localization`)
 
-- ARB system (`system: "arb"`): `flutter_localizations: sdk: flutter` in pubspec and `.arb` files. Read `l10n.yaml` for `arb-dir` (default `lib/l10n`), `template-arb-file` and `output-dir`. `location` is the `arb-dir`. Also accept ARB set up via `intl_utils` (`flutter_intl:` section in pubspec, `lib/l10n/intl_<locale>.arb`).
+- ARB system (`system: "arb"`): `flutter_localizations: sdk: flutter` in pubspec and `.arb` files. Read `l10n.yaml` for `arb-dir` (default `lib/l10n`), `template-arb-file` and `output-dir`. `location` is the `arb-dir`. `flutter: generate: true` in pubspec confirms `gen-l10n` codegen. Also accept ARB set up via `intl_utils` (`flutter_intl:` section in pubspec, `lib/l10n/intl_<locale>.arb`).
 - Locales: take them from ARB filenames: `app_en.arb` → `en`, `app_pt_BR.arb` → `pt-BR`, `intl_ar.arb` → `ar`. Cross-check with the `@@locale` key inside each file when present.
 - `easy_localization` (JSON/YAML under `assets/translations/`) or `slang` is not ARB and has no enum value: use `system: "none"`, list the locales anyway, and set `location` to that folder. Say which library it is in the summary.
 - No localization at all: `system: "none"`, `locales: []`, no `location`. Record a `strings` finding when widgets contain user-facing string literals (use the lint helper).
@@ -59,14 +59,15 @@ Set `rtl: true` when either is true:
 
 ## Component inventory (`components`)
 
-A reusable component is a **public** class (name does not start with `_`) that `extends StatelessWidget` or `extends StatefulWidget` (also `HookWidget`, `ConsumerWidget`, `ConsumerStatefulWidget`) and lives in a shared location:
+A reusable component is a **public** class (name does not start with `_`) that `extends StatelessWidget` or `extends StatefulWidget` (also `HookWidget`, `ConsumerWidget`, `ConsumerStatefulWidget`, `HookConsumerWidget`, `StatefulHookConsumerWidget`) and lives in a shared location:
 
-- shared folders: `lib/core/widgets/`, `lib/common/widgets/`, `lib/shared/`, `lib/ui/`, `lib/widgets/`, `lib/components/`, `lib/design_system/`, or a separate design-system package under `packages/`;
+- shared folders: `lib/core/widgets/`, `lib/common/widgets/`, `lib/shared/`, `lib/ui/`, `lib/widgets/`, `lib/components/`, `lib/design_system/`, or an equivalent shared folder (including under `lib/src/`, for example `lib/src/common_widgets/`), or a separate design-system package under `packages/`;
 - inside a feature, a widget under `lib/features/<f>/widgets/` (or `components/`) is reusable within that feature: include it.
 
 Not components:
 
-- pages/screens: classes named `*Page`, `*Screen`, `*View` (as the top-level route widget), or anything that wraps a `Scaffold`, is registered as a route (`GoRoute(builder:)`, `MaterialPageRoute(builder:)`, `@RoutePage()`), or creates a `BlocProvider`/`ProviderScope` for its feature. Feature `view/`, `pages/` and `screens/` folders hold pages.
+- pages/screens, whatever the state management: classes named `*Page`, `*Screen`, `*View` (as the top-level route widget), a widget that builds its own `Scaffold` with fixed content, anything registered as a route target (`GoRoute(builder:)`, `GoRoute(pageBuilder:)`, `MaterialPageRoute(builder:)`, `@RoutePage()`), or a widget that creates a `BlocProvider`/`ProviderScope`/`ChangeNotifierProvider` for its feature. Feature `view/`, `pages/`, `screens/` and `presentation/` route folders hold pages.
+- Exception: a shared `AppScaffold`-style widget that wraps `Scaffold` but takes a `body`/`child`/`title` param is a reusable component, not a page.
 - private classes (`_HomeView`), the root app widget (`App`, `MyApp`, the class passed to `runApp`), generated code, and anything under `test/`.
 
 Read params from the unnamed (or primary) constructor, in declaration order:
@@ -91,7 +92,7 @@ Widget tests do not count as previews.
 |---|---|
 | `golden` | `matchesGoldenFile(` or `expectLater(…, matchesGoldenFile` in `test/`, or a `goldens/` folder with PNGs |
 | `alchemist` | `alchemist` in dev_dependencies, `goldenTest(` calls |
-| `golden_toolkit` | `golden_toolkit` in dev_dependencies, `testGoldens(`, `screenMatchesGolden(` |
+| `golden_toolkit` | `golden_toolkit` in dev_dependencies, `testGoldens(`, `screenMatchesGolden(`. The package is discontinued: detect and record it, but never recommend adding it. |
 
 Prefer the library name when a library is used; use `golden` for plain `matchesGoldenFile`. Note `flutter_test_config.dart` (often loads fonts for goldens). When none is found: `present: false` and a `screenshot-tests` finding "no screenshot/golden tests found" with `test/` (or the project root if there is no `test/`) as the path.
 

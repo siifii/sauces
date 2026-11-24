@@ -27,9 +27,10 @@ Look for marker files at the target root and in each direct child folder (one le
 
 Then reconcile:
 
-- A Flutter project's own host folders (`android/`, `ios/`, `macos/`, `web/`, `linux/`, `windows/` inside the Flutter root, recognisable by `GeneratedPluginRegistrant`, `Flutter/` xcconfigs or `flutter.sdk` in Gradle files) are part of that Flutter project. Never report them as separate projects.
+- A Flutter project's own host folders (`android/`, `ios/`, `macos/`, `web/`, `linux/`, `windows/` inside the Flutter root, recognisable by `GeneratedPluginRegistrant`, `Flutter/` xcconfigs, or the `dev.flutter.flutter-gradle-plugin` plugin in `settings.gradle(.kts)`; `flutter.sdk` lives in the usually gitignored `local.properties`, so do not rely on it) are part of that Flutter project. Never report them as separate projects.
 - Likewise, a KMP project's `androidApp/` / `iosApp/` folders belong to the KMP project. Record native UI in them under that one `kmp-cmp` entry.
-- An Android Gradle project without Compose (XML Views only) or an iOS project with only UIKit is not a supported target. Treat it as unclassifiable source code.
+- An Android Gradle project without Compose (XML Views only) or an iOS project with only UIKit is not a supported target. Treat it as an unsupported app project.
+- Backend, cloud-function, tooling and script folders (for example Firebase `functions/`, `backend/`, `server/`, `api/`, `scripts/`, `tools/`, infrastructure code) are not app/UI projects. Ignore them for mode selection and mention them in the summary.
 
 Set `root` to the project folder relative to the target root: `"."` for the root itself, `"flutter"` for a child folder.
 
@@ -37,11 +38,16 @@ Set `root` to the project folder relative to the target root: `"."` for the root
 
 - `existing`: at least one supported project was found. List them all in `projects`, ordered by platform: `flutter`, `ios-swiftui`, `android-compose`, `kmp-cmp`.
 - `empty`: no supported project and no source code at all. A folder with only README/docs, licences, dotfiles or images is empty. Write `projects: []`.
-- `ambiguous`: there is source code you cannot classify (an unsupported or unrecognised project), or several supported projects of different platforms sit at the same level with no clear primary (for example Flutter and a native SwiftUI app side by side, neither nested in the other). Still write every supported project you found to `projects`.
+- `ambiguous`: one of these holds:
+  - no supported project was found, but there is source code you cannot classify;
+  - beside a supported project sits another **app/UI** project that is unsupported (a native Android Views or UIKit app, React Native, Ionic, a web frontend shipped as the mobile app);
+  - several supported projects of different platforms sit at the same level with no clear primary (for example Flutter and a native SwiftUI app side by side, neither nested in the other).
+
+  Backend, cloud-function, tooling or script folders beside a supported project never make the mode `ambiguous`. Still write every supported project you found to `projects`.
 
 When the mode is `ambiguous`, stop after writing and validating the profile and ask the user which project to target. If `.sauces/eval-approve` exists (eval mode, no human present), do not ask: choose the first project in platform order (`flutter`, `ios-swiftui`, `android-compose`, `kmp-cmp`), say which one you chose and why in the summary, and keep the profile as written.
 
-When the mode is `empty`, skip steps 3–5, write `{"version": 1, "mode": "empty", "projects": []}`, validate it, and tell the user that `cook` will offer to scaffold a new project.
+When the mode is `empty`, skip steps 3–4, write `{"version": 1, "mode": "empty", "projects": []}`, validate it, and tell the user that `cook` will offer to scaffold a new project.
 
 ## 3. Profile each project
 
@@ -69,7 +75,7 @@ Set `localization.rtl` to `true` when the project ships a right-to-left locale (
 A finding is a place where the project falls short of the platform's best practices **in an area the new UI will touch**. Report only real, evidenced gaps:
 
 - Use only the schema's areas: `theme`, `colors`, `strings`, `rtl`, `previews`, `screenshot-tests`, `assets`, `accessibility`.
-- Every finding has concrete `paths` (files or folders relative to the target root) that show the gap. A finding without evidence is not a finding.
+- Every finding has concrete `paths` (files or folders relative to the target root) that show the gap. A finding without evidence is not a finding. `paths` holds plain paths only, never `:line` suffixes; put line numbers in `detail`.
 - Number ids per area: `colors-1`, `colors-2`, `strings-1`, …
 - Keep `detail` to one or two sentences: what was found, where, and the line or pattern (for example `AppCard hard-codes Color(0xFFEEEEEE) instead of reading the AppColors theme extension`).
 - Stay inside the scope the new UI touches: the theme, shared components, and the conventions new screens will follow. Do not audit unrelated business logic, networking or build setup.
@@ -81,7 +87,7 @@ Ground `colors` and `strings` findings in evidence. For Flutter, run the lint he
 python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/lint_generated.py" --platform flutter <files...>
 ```
 
-Pass files relative to the project root and run it from there (quote paths: the project folder may contain spaces). It prints JSON `findings[] {file, line, rule, text}` and exits 1 when it finds anything; exit 1 is a normal result here, not an error. Group its hits into findings (one finding per file or per clear pattern), convert `file` to a path relative to the target root, and review each hit before reporting it: drop false positives the helper cannot know about. Theme definition files are where colors belong, so never report a color literal inside the theme or token files as a finding.
+Pass files relative to the project root and run it from there (quote paths: the project folder may contain spaces). It prints JSON `findings[] {file, line, rule, text}` and exits 1 when it finds anything; exit 1 is a normal result here, not an error. Exit 2 is a usage error (bad argument or missing file), not "no findings": fix the command or file list and rerun until it exits 0 or 1. Group its hits into findings (one finding per file or per clear pattern), convert `file` to a path relative to the target root, and review each hit before reporting it: drop false positives the helper cannot know about. Theme definition files are where colors belong, so never report a color literal inside the theme or token files as a finding.
 
 ## 5. Write and validate
 

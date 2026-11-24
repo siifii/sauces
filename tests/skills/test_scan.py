@@ -37,9 +37,10 @@ def test_scan_flutter_fixture(tmp_path):
     before, profile, _ = scan(workdir)
 
     assert profile["mode"] == "existing"
-    flutter = [p for p in profile["projects"] if p["platform"] == "flutter"]
-    assert flutter, profile["projects"]
-    project = flutter[0]
+    assert len(profile["projects"]) == 1, profile["projects"]
+    project = profile["projects"][0]
+    assert project["root"] == "."
+    assert project["platform"] == "flutter"
     assert project["state_management"] == "bloc"
     assert project["localization"]["system"] == "arb"
     assert "ar" in project["localization"]["locales"]
