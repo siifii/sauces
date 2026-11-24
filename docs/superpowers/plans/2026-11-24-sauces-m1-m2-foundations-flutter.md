@@ -353,6 +353,25 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
 - [ ] **Step 4:** Run. Expected: PASS. Then run validate.
 - [ ] **Step 5:** Commit `feat: ingest + design-analyst`.
 
+### Task 11b: Design-system structure signals (design §5.4a)
+
+**Files:**
+- Modify: `skills/ingest/references/manifest-schema.json`, `skills/scan-project/references/profile-schema.json`, `skills/plan/references/plan-schema.json`, `skills/ingest/SKILL.md`, `skills/ingest/references/figma.md`, `skills/scan-project/SKILL.md`, `skills/scan-project/references/flutter.md`, `tests/scripts/test_check_json.py`, `tests/skills/test_scan.py`, `tests/skills/test_ingest.py`
+- Create: `skills/plan/references/design-system-patterns.md`
+
+**Interfaces:**
+- Schema additions (all optional, so existing outputs stay valid):
+  - manifest `design_system`: `{signals[] {kind: figma-naming|component-set|variables|library|repetition, detail, evidence?}, component_candidates[] {name, occurrences, screens[], variants[]}}`
+  - profile `projects[].component_structure`: `{pattern: atomic|layered|feature-first|custom|none, paths[], evidence[]}`
+  - plan `structure`: `{recommended: atomic|layered|feature-first|follow, choice, reasons[], options[] {id, label, folders[]}}`; plan `items[].layer` (string)
+- `design-system-patterns.md`: the four patterns of design §5.4a with per-platform folder mapping (Flutter now; Compose/SwiftUI/CMP rows marked "next plans"), the scoring rules from signals, and how `level` maps to `layer`.
+
+- [ ] **Step 1: Write failing tests:** schema tests accepting the new fields and rejecting a bad `structure.recommended`; `test_scan_flutter_fixture` also asserts `component_structure.pattern == "feature-first"` (fixture: `lib/core/widgets` + `lib/features/*`); `test_ingest_login` asserts `design_system.component_candidates` names include a text field and a button with `occurrences >= 3`.
+- [ ] **Step 2:** Run. Expected: FAIL.
+- [ ] **Step 3:** Implement schema changes, skill/reference edits, and the patterns reference.
+- [ ] **Step 4:** Run (skill tests once each). Expected: PASS. Then run validate.
+- [ ] **Step 5:** Commit `feat: design-system structure signals`.
+
 ### Task 12: plan skill with recommendations
 
 **Files:**
@@ -370,7 +389,9 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
   - If `.sauces/eval-approve` exists, approve with `approved_by: "eval"`, keep every `choice: "keep"`, and say so in the output.
 - `recommendations.md`: maps each finding area to option templates, each with its concrete changes and files. Strings without localization follow design §5.2. Adding screenshot tooling is a `dependency_changes` entry that needs approval.
 
-- [ ] **Step 1: Write failing tests** (marker `skill`): run scan + ingest + `/sauces:plan` in a flutter-bloc copy.
+- Structure (design §5.4a): `plan` reads `references/design-system-patterns.md`, scores the patterns, writes `structure` with reasons, lists the pattern choice first in the approval message, and sets every item's `layer`. Eval mode takes the recommendation.
+
+- [ ] **Step 1: Write failing tests** (marker `skill`): run scan + ingest + `/sauces:plan` in a flutter-bloc copy. Also `test_plan_structure`: `structure.recommended == "follow"` for the fixture, `choice == recommended` in eval mode, ≥ 2 `reasons`, and every item has a non-empty `layer`.
   - `test_plan_reuses_existing`: there are items whose `existing_path` ends in `app_button.dart` and `app_text_field.dart`, with a decision of `reuse` or `extend`. No `new` item is named like a button or text field.
   - `test_plan_recommendation_for_card_color`: there's a recommendation whose `finding_id` matches the colors finding, with options including `keep`, and `choice == "keep"`.
   - `test_plan_strings_cover_copy`: the `strings[].value` set contains all six copy strings from Global Constraints.
@@ -420,6 +441,7 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
   - `test_arb_keys_in_all_locales`: `app_en.arb` and `app_ar.arb` have identical non-`@` key sets, which include ≥ 6 new keys.
   - `test_existing_components_not_replaced` *(Review Focus 3)*: for `app_button.dart` and `app_text_field.dart`, `git diff --numstat` shows deletions ≤ 3, and every pre-existing public constructor parameter is still present (regex over the old and new file).
   - `test_login_page_exists`: a file under `lib/features/login/` defines a `LoginPage` widget and a Cubit.
+  - `test_files_follow_structure`: every generated file's path matches the folder of its plan item's `layer` under the chosen pattern (design §5.4a).
 - [ ] **Step 2:** Run. Expected: FAIL.
 - [ ] **Step 3:** Write the skill, reference and agent.
 - [ ] **Step 4:** Run. Expected: PASS. Then run validate.
@@ -468,7 +490,7 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
     - `contrast_ratio(fg: str, bg: str) -> float` (WCAG 2.x relative luminance)
     - `spacing_outliers(values: list[float], grid: int = 4) -> list[float]`
     - `missing_states(manifest: dict) -> dict[str, list[str]]` (expected loading, error and empty for screens with inputs or lists; default only otherwise)
-- The template has sections with ids `summary`, `graph`, `localization`, `audit`, `todos`, `practices`, `recommendations`. The CSS is inline. The only external resource is the mermaid CDN `<script>`, with the graph's source also shown in a `<pre>` fallback.
+- The template has sections with ids `summary`, `design-system`, `graph`, `localization`, `audit`, `todos`, `practices`, `recommendations`. `design-system` shows the chosen pattern, its reasons and components per layer. The CSS is inline. The only external resource is the mermaid CDN `<script>`, with the graph's source also shown in a `<pre>` fallback.
 
 - [ ] **Step 1: Write failing tests:**
   - `test_contrast_black_white_is_21`: within 0.01.
@@ -496,6 +518,7 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
   - Confirm the platform(s), showing defaults marked "(Recommended)" with overrides allowed. Eval mode takes the defaults. Only Flutter is implemented in this plan; other platforms say "coming in a later version" and stop.
   - Refuse a non-empty target folder unless the user confirms. In eval mode, always refuse.
   - Run `flutter create --org <org> --project-name <name> --platforms android,ios flutter`.
+  - Create the folders of the design-system pattern (design §5.4a) recommended from the manifest's signals, or the one the user picks (eval mode: recommended); record it in the project README.
   - Apply the overlay and merge `pubspec.additions.yaml` (flutter_bloc, flutter_localizations, intl, `generate: true`, a fonts placeholder).
   - Run `flutter pub get`, `flutter gen-l10n` and `flutter analyze`.
   - Record the dependency versions it picked (latest stable via `flutter pub add`) and the date in the project's README.
