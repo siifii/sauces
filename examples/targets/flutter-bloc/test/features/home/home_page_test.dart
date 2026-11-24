@@ -23,5 +23,14 @@ void main() {
 
     expect(find.text('الرئيسية'), findsOneWidget);
     expect(find.text('قل مرحبًا'), findsOneWidget);
+    expect(
+      Directionality.of(tester.element(find.byType(Scaffold).first)),
+      TextDirection.rtl,
+    );
+
+    await tester.tap(find.text('قل مرحبًا'));
+    await tester.tap(find.text('قل مرحبًا'));
+    await tester.pump();
+    expect(find.textContaining('مرتين'), findsOneWidget);
   });
 }

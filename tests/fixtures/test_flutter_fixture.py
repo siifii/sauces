@@ -19,13 +19,14 @@ def test_fixture_builds(tmp_path):
     assert (app / "lib" / "l10n" / "gen" / "app_localizations.dart").exists()
 
 
-@needs_flutter
 def test_fixture_has_exactly_one_lint_gap():
-    files = sorted(str(p) for p in (FIXTURE / "lib").rglob("*.dart"))
+    files = sorted(
+        str(p) for p in (FIXTURE / "lib").rglob("*.dart")
+        if "l10n/gen" not in p.as_posix()
+    )
     assert files
     result = run_script("lint_generated.py", "--platform", "flutter", *files)
-    findings = json.loads(result.stdout)
-    findings = findings.get("findings", findings) if isinstance(findings, dict) else findings
+    findings = json.loads(result.stdout)["findings"]
     assert len(findings) == 1, findings
     assert findings[0]["rule"] == "hardcoded-color"
     assert findings[0]["file"].endswith("lib/core/widgets/app_card.dart")

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_text_field.dart';
 import '../../../l10n/l10n.dart';
 import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
@@ -40,6 +41,8 @@ class _HomeView extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            AppTextField(label: context.l10n.homeNameLabel),
             const SizedBox(height: 16),
             AppButton(
               label: context.l10n.homeGreetButton,

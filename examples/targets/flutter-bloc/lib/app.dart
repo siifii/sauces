@@ -11,6 +11,7 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      onGenerateTitle: (context) => context.l10n.appTitle,
       theme: AppTheme.light(),
       localizationsDelegates: const [
         AppLocalizations.delegate,
