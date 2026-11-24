@@ -1,10 +1,9 @@
 """Shared test helpers for the Sauces plugin.
 
 Helpers: run_script, fixture_copy, run_skill, has_tool.
-Ready-made skip markers (import them: `from conftest import needs_flutter`
-works because pytest puts tests/ on sys.path via rootdir conftest handling;
-or use `pytest.mark.skipif(not has_tool(...))` directly):
-    needs_flutter, needs_pdftoppm, needs_claude
+Ready-made skip markers: needs_flutter, needs_pdftoppm, needs_claude.
+Import any of these in test files with `from conftest import ...`; that works
+because pytest.ini sets `pythonpath = tests`.
 """
 import json
 import shutil
@@ -29,10 +28,15 @@ def fixture_copy(name: str, tmp_path: Path) -> Path:
     """Copy examples/targets/<name> to tmp_path/'my app' and git init with one commit."""
     dest = tmp_path / "my app"
     shutil.copytree(REPO / "examples" / "targets" / name, dest)
-    git = ["git", "-c", "user.name=test", "-c", "user.email=test@example.com"]
     subprocess.run(["git", "init", "-q"], cwd=dest, check=True)
+    subprocess.run(["git", "config", "user.name", "Sauces Test"], cwd=dest, check=True)
+    subprocess.run(["git", "config", "user.email", "test@sauces.invalid"], cwd=dest, check=True)
     subprocess.run(["git", "add", "-A"], cwd=dest, check=True)
-    subprocess.run([*git, "commit", "-q", "-m", "fixture"], cwd=dest, check=True)
+    subprocess.run(
+        ["git", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null",
+         "commit", "-q", "-m", "fixture"],
+        cwd=dest, check=True,
+    )
     return dest
 
 
