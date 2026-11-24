@@ -35,14 +35,28 @@ Platform names below are Flutter; for other platforms use the equivalent from th
 | `theme` (no central theme, theme spread over widgets) | New tokens go where the project keeps styling today | `central-theme`: create one `ThemeData` with a `ColorScheme` and a `ThemeExtension` for custom tokens, wire it in the app root, move the values the new UI uses there | the theme file to create, the app root (`MaterialApp`), the finding's paths |
 | `colors` (hard-coded color literals) | Existing literals stay; new code uses theme tokens | `centralize`: add each literal as a named token (a `ColorScheme` role when one fits by meaning, else a field on the project's `ThemeExtension`) and read it in the listed files | `theme.tokens_source`, `theme.location`, the finding's paths |
 | `strings` (literals in widgets while localization exists) | Existing literals stay; new strings go into the project's system | `move-to-resources`: add a key per literal to the source-locale file (and every other locale with the source value marked for translation), replace the literals | the string files in `localization.location`, the finding's paths |
-| `strings` (no localization at all) | New strings go into one feature strings class (section 3) | `localize`: set up the platform's localization system (section 3) and move the new strings there; optionally a second option that also moves the existing literals | `pubspec.yaml`, `l10n.yaml`, the new ARB file, the app root, the feature strings class |
+| `strings` (no localization at all) | New strings go into one feature strings class (section 4) | `localize`: set up the platform's localization system (section 4) and move the new strings there; optionally a second option that also moves the existing literals | `pubspec.yaml`, `l10n.yaml`, the new ARB file, the app root, the feature strings class |
 | `rtl` (left/right instead of start/end, no `Directionality` handling) | Existing code stays; new code is directional | `directional`: replace `EdgeInsets.only(left:/right:)`, `Alignment.centerLeft`, `TextAlign.left` and similar in the listed files with their directional versions | the finding's paths |
 | `previews` (shared components without previews) | New components still get a preview | `add-previews`: add a preview for each listed component using the project's existing preview pattern (a Widgetbook use case or an example/golden test). Flutter's `@Preview` widget previews are recent and experimental; offer them only when the project's Flutter version and code already use them | the listed components, the preview or test folder |
 | `screenshot-tests` (no golden or snapshot tests) | Sauces' own verification goldens for the new UI are still written under `test/sauces/` | `add-goldens`: add golden tests for the listed shared components with the project's fonts loaded | `test/` paths for each listed component |
 | `assets` (unorganized or duplicated assets, missing resolution variants) | New assets follow the existing layout | `organize`: the concrete fix the finding describes (declare the folder in `pubspec.yaml`, add `2.0x`/`3.0x` variants, remove a duplicate only if unused) | `pubspec.yaml`, the asset folder |
 | `accessibility` (missing labels, small touch targets, fixed text sizes) | New code still meets the platform rules | `fix-a11y`: the concrete fix per listed file (semantic label, ≥ 48 dp target, respect text scaling) | the finding's paths |
 
-## 3. Where strings go (design §5.2)
+## 3. Theme changes the design asks for
+
+Scan findings are not the only source of recommendations. When the design differs from an existing theme value (`matching.md` section 4: a seed-derived color role, an existing text style, a component theme's radius), write one recommendation per theme file:
+
+- `id`: `rec-design-theme-<n>`, `finding_id`: `design-theme-<n>` (there is no scan finding; the evidence is the design).
+- `why`: each difference with the design value, the current value (or "derived from seed `#3D5AFE`") and the ΔE76 when known, and that `keep` means the new UI uses the existing roles and styles and verify reports the difference.
+- Options:
+  - `keep` (default): no change to the theme. New components use the nearest existing role or style; the differences are recorded on the items as expected fidelity notes.
+  - `pin-roles`: set the listed roles or styles to the design values in the theme file (for Flutter, the named overrides of `ColorScheme.fromSeed(...)` and the `TextTheme` entries). `changes` must list every role or style it changes and the files that use them (grep the project for `colorScheme.<role>`, `textTheme.<style>` and the component theme), and warn that pinning a role breaks the Material 3 tonal derivation of its `on*` and `*Container` partners.
+  - `fidelity-variant` (seed-based color schemes only): generate the scheme with `ColorScheme.fromSeed(seedColor: ..., dynamicSchemeVariant: DynamicSchemeVariant.fidelity)`, which keeps roles closer to the seed. Mark it "Flutter ≥ 3.22; verify in the project's Flutter version", and say that it shifts every role app-wide.
+- `choice: "keep"`. Eval mode keeps it, so eval runs never change the existing theme.
+
+Additive tokens (a new theme-extension field or text style only new components use) are plan items, not recommendations.
+
+## 4. Where strings go (design §5.2)
 
 The plan lists strings; build writes them where this table says:
 
@@ -64,7 +78,7 @@ When `localization.system` is `none`, always add a recommendation that offers pr
 
 RTL: when `localization.rtl` is true, every new string and layout must work right-to-left; note in the screen item that build uses directional padding and alignment.
 
-## 4. Dependency changes
+## 5. Dependency changes
 
 `dependency_changes[]` entries are `{package, version, scope: "dev"|"main", reason}`. List only what build will add for the plan as it stands; entries for options the user has not picked are not listed. Before listing a package, check the project's manifest (`pubspec.yaml`, `Package.swift`, Gradle version catalog) to see whether it is already there.
 

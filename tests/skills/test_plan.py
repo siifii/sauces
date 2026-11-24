@@ -35,6 +35,12 @@ def git_status(workdir):
     return [line for line in out.splitlines() if not line[3:].startswith(".sauces/")]
 
 
+def norm(path):
+    """A profile path without a `:line` suffix or a leading `./`."""
+    path = path.split(":")[0]
+    return path[2:] if path.startswith("./") else path
+
+
 def copy_design(dest):
     """The login PNGs, the eye icon and description.md (no PDF, so no pdftoppm needed)."""
     (dest / "icons").mkdir(parents=True)
@@ -54,7 +60,9 @@ def pipeline(tmp_path_factory):
     logs = []
     for prompt in ("/sauces:scan-project", f'/sauces:ingest "{design}"', "/sauces:plan"):
         result = run_skill(workdir, prompt)
-        logs.append(f"$ {prompt}\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}")
+        log = f"$ {prompt}\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+        logs.append(log)
+        assert result.returncode == 0, log
     plan_path = workdir / ".sauces" / "plan.json"
     assert plan_path.is_file(), "no plan written\n" + "\n".join(logs)
     check = run_script("check_json.py", str(SCHEMA), str(plan_path))
@@ -87,7 +95,8 @@ def test_plan_recommendation_for_card_color(pipeline):
     project = pipeline["profile"]["projects"][0]
     color_ids = {
         f["id"] for f in project["findings"]
-        if f["area"] == "colors" and "lib/core/widgets/app_card.dart" in f["paths"]
+        if f["area"] == "colors" and any(norm(p).endswith("core/widgets/app_card.dart")
+                                         for p in f["paths"])
     }
     assert color_ids, project["findings"]
     recs = [r for r in pipeline["plan"]["recommendations"] if r["finding_id"] in color_ids]
@@ -107,6 +116,7 @@ def test_plan_eval_approved(pipeline):
     assert plan["approved"] is True, plan
     assert plan["approved_by"] == "eval", plan
     assert all(r["choice"] == "keep" for r in plan["recommendations"]), plan["recommendations"]
+    assert re.search(r"auto-?approved", pipeline["output"], re.I), pipeline["output"]
 
 
 def test_plan_structure(pipeline):

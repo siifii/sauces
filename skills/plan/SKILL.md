@@ -5,7 +5,7 @@ description: This skill should be used when the user asks to "plan the implement
 
 # Plan
 
-Turn `.sauces/manifest.json` (ingest) and `.sauces/project-profile.json` (scan) into `.sauces/plan.md` for people and `.sauces/plan.json` for `build`. This is the pipeline's single human checkpoint: `build` refuses to run until `plan.json` has `"approved": true`, so the plan must be complete, honest and easy to approve or correct.
+Turn `.sauces/manifest.json` (ingest) and `.sauces/project-profile.json` (scan) into `.sauces/plan.md` for people and `.sauces/plan.json` for `build`. This is the single human checkpoint: `build` refuses to run until `plan.json` has `"approved": true`.
 
 ## Hard rules
 
@@ -24,7 +24,7 @@ Turn `.sauces/manifest.json` (ingest) and `.sauces/project-profile.json` (scan) 
    - `existing`: plan for the project in `projects`. With several, plan for the first in platform order (`flutter`, `ios-swiftui`, `android-compose`, `kmp-cmp`) unless the user named one, and say so.
    - `ambiguous`: plan for the project the user picked during scan. In eval mode (`.sauces/eval-approve` exists) take the first in platform order.
    - `empty`: stop. Tell the user to scaffold a project first (`/sauces:scaffold`, or `/sauces:cook` offers it), then rerun scan and plan.
-3. Read the platform's build reference, `${CLAUDE_PLUGIN_ROOT}/skills/build/references/<platform>.md`, when it exists. Its `## Tokens`, `## Components`, `## Strings & RTL`, `## Assets`, `## Accessibility`, `## State` and `## Folders` sections describe what good code looks like on that platform; plan items and recommendations must agree with them, and `## Don't` lists what never to plan. Sections that only say "Filled in by the build task." carry no guidance yet. If no reference exists for the platform, plan from the profile alone and say in the summary that detailed platform guidance comes in a later Sauces version.
+3. Read the platform's build reference, `${CLAUDE_PLUGIN_ROOT}/skills/build/references/<platform>.md`, when it exists. Its sections (`## Tokens` … `## Folders`) describe good code on that platform; items and recommendations must agree with them, and `## Don't` lists what never to plan. Sections that only say "Filled in by the build task." carry no guidance yet. If no reference exists for the platform, plan from the profile alone and say in the summary that detailed platform guidance comes in a later Sauces version.
 4. Read the existing components' source files listed in `components[]` (params, variants, defaults), the theme files (`theme.location`, `theme.tokens_source`) and, when `localization.system` is not `none`, the source-locale string file in `localization.location`.
 
 ## 2. Choose the structure
@@ -37,7 +37,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/matching.md` and follow it. I
 
 - Walk every state's `layout` of every screen. Each distinct UI element (component node, or a meaningful group such as a form) becomes one item, with the states it appears in merged into one item. A screen is one `screen`-level item.
 - Match each element against `components[]` by kind and parameter fit, score a `confidence`, and decide `reuse` (≥ 0.8), `extend` (0.5–0.8, naming the exact additive param or variant) or `new` (< 0.5).
-- Map design tokens to the theme's existing tokens first. Plan `token` items only for genuinely new or changed values.
+- Map design tokens to the theme's existing tokens first. Plan `token` items only for additive tokens (new values new components need). A change to an existing theme value is never an item: it becomes a `theme` recommendation (step 5), and with `keep` the items record the expected fidelity difference.
 - Map `manifest.assets` (icons, illustrations) to existing assets, the platform's icon set, or a new asset, per `matching.md`.
 
 Every item has: `id` (`item-1`, `item-2`, … in plan order: tokens, assets, atoms, molecules, organisms, screens), `design_ref` (`<screen>/<state>#<element>`, for example `login/default#button`; use the first state where it appears), `decision`, `name`, `path` (the target file for new/token items, the existing file for reuse/extend), `level`, `layer`, `confidence`, `existing_path` for `reuse`/`extend`, and `notes` (states covered, the exact change for `extend`, anything build must know).
@@ -56,7 +56,7 @@ List every distinct user-facing text in the design as one `strings[]` entry `{ke
 
 ## 5. Recommendations
 
-Read `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/recommendations.md`. For each profile finding in an area the new UI touches, write one recommendation: `id` (`rec-<finding id>`, for example `rec-colors-1`), `finding_id`, `title`, `why` (what was found, with paths, and why it matters), `options` (always `keep` first, then the concrete options from the reference with their `changes` and `files`), `choice: "keep"`. Skip a finding only when the new UI never touches its area, and say so in `plan.md`. When `localization.system` is `none`, also add the localization recommendation from that file's strings section.
+Read `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/recommendations.md`. For each profile finding in an area the new UI touches, write one recommendation: `id` (`rec-<finding id>`, for example `rec-colors-1`), `finding_id`, `title`, `why` (what was found, with paths, and why it matters), `options` (always `keep` first, then the concrete options from the reference with their `changes` and `files`), `choice: "keep"`. Skip a finding only when the new UI never touches its area, and say so in `plan.md`. Also add the theme-change recommendations from that file's section 3 (design differences that only a change to the existing theme would fix) and, when `localization.system` is `none`, the localization recommendation from its strings section.
 
 ## 6. Dependency changes
 
@@ -100,15 +100,16 @@ Then write `.sauces/plan.md` with exactly these sections in this order:
 1. **Structure**: the recommended pattern with its reasons, then the alternatives (one line each with their folders).
 2. **Components**: a short summary of the table (counts by decision, the extends with their exact change, the new components with their paths).
 3. **Recommendations**: each id, one-line finding and its options; say every one defaults to `keep`.
-4. **Dependency changes**: each package, version, scope and reason, or "None".
-5. **Design suggestions**: only when step 7 produced any.
-6. End with: "Reply 'approve' (optionally with choices like `rec-colors-1: centralize` or `structure: layered`), or tell me what to change."
+4. **Changes to existing shared code**: every `extend` (the exact change) and every theme change an option would make, each with what else uses it (grep the project for its callers or role usages). Say that with the defaults no existing theme value changes.
+5. **Dependency changes**: each package, version, scope and reason, or "None".
+6. **Design suggestions**: only when step 7 produced any.
+7. End with: "Reply 'approve' (optionally with choices like `rec-colors-1: centralize` or `structure: layered`), or tell me what to change."
 
 Then end your turn. Do not continue to build.
 
 When the user replies:
 
-- **Explicit approval** ("approve", "yes", "looks good, go ahead"), with or without choices: record each choice (`recommendations[].choice` = the option id; `structure.choice`). Accept `rec colors-1` for `rec-colors-1`; an unknown id or option is a question back, not a guess. If the structure changed, recompute every item's `layer` and `path` and tell the user what moved. Add the `dependency_changes` entries a chosen option needs. Set `approved: true`, `approved_by: "user"`, validate, update `plan.md`, and confirm in one short message (what was chosen; next step `/sauces:build`).
+- **Explicit approval** ("approve", "yes", "looks good, go ahead"), with or without choices: record each choice (`recommendations[].choice` = the option id; `structure.choice`). Accept `rec colors-1` for `rec-colors-1`; an unknown id or option is a question back, not a guess. Add the `dependency_changes` entries a chosen option needs. If the structure changed, do not approve yet: recompute every item's `layer` and `path`, add the move-existing-files recommendation (`design-system-patterns.md` section 5, default `keep`), validate, and send one short confirmation round listing what moved and any package added; approve on the user's yes. Otherwise set `approved: true`, `approved_by: "user"`, validate, update `plan.md`, and confirm in one short message: what was chosen, every package a chosen option adds (say explicitly that it will be added), and the next step `/sauces:build`.
 - **Change request**: revise items, strings or choices as asked, keep `approved: false`, validate, rewrite `plan.md`, and send the approval message again with the changes highlighted.
 - **Anything else** (a question, an unclear reply): answer it and ask again. Never read silence, a question or "ok?" as approval.
 

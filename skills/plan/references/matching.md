@@ -19,7 +19,7 @@ For each element, compare with every entry in `components[]`:
 
 - **Kind fit.** The component renders the same kind of control. Judge from the source, not only the name: `AppButton` wrapping `FilledButton` is a filled button; `AppTextField` wrapping `TextField` with `InputDecoration` is a text field.
 - **Param fit.** Each piece of content or variant the element shows needs a parameter: label text ↔ `label`, error text or error variant ↔ `errorText`, masked value ↔ `obscure`, tap ↔ `onPressed`, loading spinner ↔ `loading`, trailing icon ↔ `suffixIcon`/`trailing`. Example: a design text field with a label and an error state ↔ `AppTextField(label, errorText)` is a full fit.
-- **Look fit.** The component's built-in styling (height, radius, fill, border) is close to the design or comes from the theme, so a token change fixes the difference.
+- **Look fit.** The component's built-in styling (height, radius, fill, border) is close to the design or comes from the theme. A remaining difference that only a change to the existing theme would fix is recorded in `notes` as an expected fidelity difference and offered as a `theme` recommendation (section 4); it does not lower the decision.
 
 Score `confidence` from 0 to 1:
 
@@ -57,12 +57,18 @@ For each `manifest.assets` entry and each `icon` node:
 
 ## 4. Tokens
 
-Map every design token to the project's theme before planning anything new:
+Map every design token to the project's theme before planning anything new. Split the result in two:
+
+- **Additive** (a new token, a new theme-extension field, a new text style used only by new components): a `token` item.
+- **Changing an existing theme value** (pinning `ColorScheme` roles over a seed-generated scheme, editing an existing text style, radius, shape or component theme): never an item. It becomes a `theme` recommendation (`recommendations.md` section 3) with `keep` as the default, because it changes every screen that already uses that value.
+
+Rules per token kind:
 
 - **Colors.** Compare each design color with the colors the theme defines: literal values in the theme files and in `theme.tokens_source` (theme extensions, color files, asset catalogs). Two colors are the same when CIE76 ΔE < 3. A match means the item uses that existing token; no `token` item.
-- **Derived colors.** A seed or generated palette (for example a seed-based color scheme) has no literal value per role, and its generated roles usually differ from the seed. Do not assume a role matches. Map the design color to the role by meaning (`primary` for the main button fill, `onSurface` for body text, `outline` for field borders, `error`), and when the design needs the exact value, plan one `token` item per theme file that pins those roles, listing each role → hex in `notes`, and say that it changes those roles app-wide.
-- **Typography.** Map each design style to the theme's type scale by size and role (`28/36 600` → the headline style closest to 28). When weight, size, line height or letter spacing differ, plan a `token` item that adjusts that style in the theme (one item per theme file, each change in `notes`). Never plan per-widget font overrides when the theme can carry the style.
-- **Spacing and radii.** If the project has spacing or radius tokens, map to them. If it writes these values inline, follow that; do not invent a token system (a recommendation may offer one).
-- **Genuinely new values** (a color with no role match and ΔE ≥ 3 to everything) become `token` items with `decision: "token"`, `level: "token"`, `confidence: 1`, `path` = the file where the project keeps that kind of token, and the name and value in `name`/`notes`.
+- **Derived colors.** A seed or generated palette (for example a seed-based color scheme) has no literal value per role, and its generated roles usually differ from the seed. Do not assume a role matches. Map the design color to the nearest existing role by meaning (`primary` for the main button fill, `onSurface` for body text, `outline` for field borders, `error`). Record on the items that use it the role, the design hex and the estimated ΔE76 (or "unknown, derived from seed") as an expected fidelity difference. If the exact value matters, that is the `theme` recommendation's `pin-roles` or `fidelity-variant` option, not an item.
+- **Brand color a new component needs.** When a new component (never an existing one) needs a color the scheme does not produce, prefer an additive `token` item: a new field on the project's theme extension.
+- **Typography.** Map each design style to the theme's type scale by size and role (`28/36 600` → the headline style closest to 28). A difference in an existing style (weight, size, line height, letter spacing) goes to the `theme` recommendation; with `keep`, new code uses the existing style and the item notes record the difference. A style only new components use may be an additive `token` item (a new named style in the theme extension). Never plan per-widget font overrides.
+- **Spacing and radii.** If the project has spacing or radius tokens, map to them. If it writes these values inline, follow that; do not invent a token system (a recommendation may offer one). Changing an existing component theme's radius is a `theme` recommendation.
+- **Genuinely new values** (a color with no role match and ΔE ≥ 3 to everything, used by new components) become `token` items with `decision: "token"`, `level: "token"`, `confidence: 1`, `path` = the file where the project keeps that kind of token, and the name and value in `name`/`notes`.
 
-A `token` item never deletes or renames an existing token. Changing an existing token's value is allowed only as a `token` item whose `notes` say what else uses it.
+A `token` item never deletes, renames or changes the value of an existing token.
