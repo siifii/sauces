@@ -402,6 +402,27 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
 - [ ] **Step 4:** Run. Expected: PASS. Then run validate.
 - [ ] **Step 5:** Commit `feat: plan with recommendations and approval gate`.
 
+### Task 12b: Design suggestions + `design_audit.py` (design §5.4b)
+
+**Files:**
+- Create: `scripts/design_audit.py`, `tests/scripts/test_design_audit.py`, `skills/plan/references/design-review.md`
+- Modify: `skills/plan/references/plan-schema.json`, `skills/plan/SKILL.md`, `tests/skills/test_plan.py`, `tests/scripts/test_check_json.py`
+
+**Interfaces:**
+- `design_audit.py --manifest .sauces/manifest.json [-o .sauces/design-audit.json] [--grid 4]` (stdlib only) writes `{version, findings[] {id, category: accessibility|consistency|states|platform|localization|ux, severity: high|medium|low, screen, state?, detail, measured: object, guideline}}`. Importable functions (the report reuses their output, not their code): `delta_e76(hex_a, hex_b) -> float`, `near_duplicate_colors(hexes, threshold=3.0) -> list[tuple[str,str,float]]`, `contrast_ratio(fg, bg) -> float` (WCAG 2.x), `spacing_outliers(values, grid=4) -> list[float]`, `missing_states(manifest) -> dict[str, list[str]]`, `small_touch_targets(manifest, min_dp=48) -> list[dict]`, `small_text(manifest, min_px=12) -> list[dict]`. Contrast pairs come from text nodes' `style.color` over the nearest ancestor background (fallback: surface token).
+- plan schema addition (optional field): `design_suggestions[] {id, audit_id?, category, severity, title, evidence, change, why, guideline, choice: keep|apply}`; `choice` defaults to `keep`.
+- `design-review.md`: the category checklist of design §5.4b with per-platform conventions (Material vs HIG), how to turn audit findings into suggestions, plus judgement-based checks the script can't measure (primary-action hierarchy, error copy specificity, text-expansion risk), each requiring a cited principle.
+- plan SKILL.md: run `design_audit.py`, write `design_suggestions` + a "Design suggestions" section in plan.md (sorted by severity), ask for keep/apply choices in the same approval message; eval keeps all.
+
+- [ ] **Step 1: Write failing tests:**
+  - `test_contrast_black_white_is_21` (±0.01), `test_contrast_aa_failure` (`#777777` on `#FFFFFF` < 4.5), `test_near_duplicates` (`#3D5AFE`/`#3E5BFE` flagged; `#3D5AFE`/`#B3261E` not), `test_spacing_outliers` (`[4,8,13,16]` → `[13]`), `test_missing_states` (login with only default → loading, error), `test_small_touch_target` (a 36-px-high button node flagged), `test_audit_cli_writes_findings` (canned manifest → JSON with those categories).
+  - schema: plan accepts `design_suggestions` and rejects `choice: "maybe"`.
+  - skill (`test_plan.py::test_plan_design_suggestions`): on the sample, ≥ 1 suggestion, every one has non-empty `guideline` and `evidence`, all `choice == "keep"` in eval mode, and plan.md has a "Design suggestions" section.
+- [ ] **Step 2:** Run. Expected: FAIL.
+- [ ] **Step 3:** Implement script, schema, reference and skill changes.
+- [ ] **Step 4:** Run. Expected: PASS. Then run validate.
+- [ ] **Step 5:** Commit `feat: design suggestions and design audit`.
+
 ### Task 13: build skill (Flutter) + component-builder agent
 
 **Files:**
@@ -414,7 +435,7 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
 - SKILL.md:
   - Refuse unless `approved` is true.
   - Build in this order: tokens → assets → atoms → molecules → organisms → screens.
-  - Apply only chosen recommendations.
+  - Apply only chosen recommendations, and implement every design suggestion with `choice: "apply"` as the improved design (record each in state.json `changed_files` context and in `.sauces/deviations.json` `[{suggestion_id, screen, state, region, note}]`).
   - After building, run `lint_generated.py` on the generated/changed Dart files and fix every finding.
   - Run `flutter gen-l10n` (when the project uses ARB) and `flutter analyze`, and fix errors.
   - Write a `TODO(sauces): …` for unknown behavior and list them in `.sauces/todos.json` (`[{file, line, text}]`).
@@ -463,6 +484,7 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
   - Pump each state by giving the Cubit a seeded state.
   - Run `flutter test --update-goldens test/sauces/`.
   - The RTL pass pumps with `locale: Locale('ar')`. Check for overflow errors in the test output and compare the mirrored layout, recording any issues as `rtl_issues`.
+- Intentional deviations: read `.sauces/deviations.json`; list them beside the score in `summary.json` (`deviations: [suggestion_id]`) and never "fix" them back.
 - Loop: when a score is below the threshold, the fidelity-checker proposes fixes, the build rules apply them, and the screen is re-rendered, for at most 3 iterations. Then record and move on. If the render fails entirely, write `rendered: false` and a manual checklist to `.sauces/verify/checklist.md`, and say so.
 
 - [ ] **Step 1: Write failing tests** (marker `skill`, continuing the Task 13 pipeline):
@@ -484,20 +506,11 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
 - Consumes: every `.sauces/` file (missing files make their section say "not run").
 - Produces:
   - `report_render.py --sauces-dir D [--template T] [-o out.html]`, which writes `report.html`.
-  - Importable functions:
-    - `delta_e76(hex_a: str, hex_b: str) -> float`
-    - `near_duplicate_colors(hexes: list[str], threshold: float = 3.0) -> list[tuple[str,str,float]]`
-    - `contrast_ratio(fg: str, bg: str) -> float` (WCAG 2.x relative luminance)
-    - `spacing_outliers(values: list[float], grid: int = 4) -> list[float]`
-    - `missing_states(manifest: dict) -> dict[str, list[str]]` (expected loading, error and empty for screens with inputs or lists; default only otherwise)
+  - The audit section renders `.sauces/design-audit.json` (Task 12b) and the plan's `design_suggestions` with their keep/apply decisions; report_render does not recompute audit facts.
 - The template has sections with ids `summary`, `design-system`, `graph`, `localization`, `audit`, `todos`, `practices`, `recommendations`. `design-system` shows the chosen pattern, its reasons and components per layer. The CSS is inline. The only external resource is the mermaid CDN `<script>`, with the graph's source also shown in a `<pre>` fallback.
 
 - [ ] **Step 1: Write failing tests:**
-  - `test_contrast_black_white_is_21`: within 0.01.
-  - `test_contrast_aa_failure`: `#777777` on `#FFFFFF` < 4.5.
-  - `test_near_duplicates`: `#3D5AFE` and `#3E5BFE` are flagged, and `#3D5AFE` and `#B3261E` are not.
-  - `test_spacing_outliers`: given `[4,8,13,16]`, returns `[13]`.
-  - `test_missing_states`: a login screen with only `default` reports `loading` and `error` missing.
+  - `test_audit_section_lists_suggestions`: the canned sample's design suggestions appear with their decisions and guidelines.
   - `test_render_sections`: render `tests/data/sauces_sample`, and every section id is present.
   - `test_self_contained`: no `<link rel="stylesheet"`, and the only `src=` that starts with `http` is the mermaid script.
   - `test_missing_inputs`: rendering a folder with only manifest.json exits 0 and contains `not run`.
