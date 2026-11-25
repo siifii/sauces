@@ -10,6 +10,7 @@ SCHEMAS = [
     "skills/scan-project/references/profile-schema.json",
     "skills/plan/references/plan-schema.json",
     "skills/cook/references/state-schema.json",
+    "skills/verify/references/summary-schema.json",
 ]
 
 
