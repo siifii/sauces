@@ -37,7 +37,8 @@
     "lib/features/login/view/login_page.dart",
     "lib/features/login/cubit/login_cubit.dart",
     "lib/features/login/cubit/login_state.dart",
-    "test/sauces/login_render_test.dart"
+    "test/sauces/login_render_test.dart",
+    "assets/icons/eye.svg"
   ],
   "changed_files": [
     "lib/core/widgets/app_button.dart",

@@ -3,12 +3,13 @@
 
 Fills skills/report/assets/report-template.html with the manifest, project
 profile, plan, design audit, build outputs (todos, deviations, state) and
-verify results. The page is self-contained: inline CSS, screenshots embedded
-as data URIs; the only external resource is the mermaid CDN script, and the
-graph source is also shown as plain text.
+verify results. The page is self-contained and makes no network requests: inline
+CSS, screenshots embedded as data URIs, the component graph as inline SVG with
+its source as plain text. `--allow-cdn` additionally loads mermaid from a CDN
+(exact pinned version, SRI hash) for a richer graph; it is off by default.
 
-A missing or unreadable input makes its section say "not run". All text from
-the inputs is HTML-escaped.
+A missing input makes its section say "not run"; an unreadable or wrong-shaped one
+is listed under "Unreadable inputs". All text from the inputs is HTML-escaped.
 
 Exit codes: 0 written, 2 usage error (missing .sauces dir or template),
 3 missing dependency.
@@ -30,23 +31,28 @@ DECISIONS = ("reuse", "extend", "new", "token")
 SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2}
 RTL_LOCALES = {"ar", "he", "fa", "ur", "iw", "ps", "sd", "ug", "yi", "dv", "ckb"}
 
-# What the generated code follows, per platform. Each line holds only when the matching
-# build reference was followed; the summary's checks section says whether lint/tests ran.
+# Pinned for --allow-cdn only. The hash is the SRI sha384 of that exact file.
+MERMAID_VERSION = "11.4.1"
+MERMAID_SRI = "sha384-rbtjAdnIQE/aQJGEgXrVUlMibdfTSa4PQju4HDhN3sR2PmaKFzhEafuePsl9H/9I"
+
+# Practices the build references ask for, as (evidence key, text). The report never claims a
+# practice was followed on its own: each one is ticked, flagged or "not checked" from the
+# run's evidence (see practice_checks).
 PRACTICES = {
     "flutter": [
-        "Colors and type come from the theme (ColorScheme, TextTheme, ThemeExtension), never Colors.* or hex literals.",
-        "Every user-facing string lives in the localization files of every locale; non-source locales are marked for translation.",
-        "Directional layout (EdgeInsetsDirectional, AlignmentDirectional) so right-to-left locales mirror correctly.",
-        "Existing components are extended with optional parameters whose defaults keep today's behavior.",
-        "Each screen state can be shown by seeding its state class, which is how tests and verify render it.",
-        "Touch targets of at least 48 dp, semantics labels from l10n, and no fixed-height text containers.",
-        "Unknown behavior (API calls, navigation) is a TODO(sauces) comment, never a fake.",
+        ("tokens", "Colors and type come from the theme (ColorScheme, TextTheme, ThemeExtension), never Colors.* or hex literals."),
+        ("strings", "Every user-facing string lives in the localization files of every locale; non-source locales are marked for translation."),
+        ("rtl", "Directional layout (EdgeInsetsDirectional, AlignmentDirectional) so right-to-left locales mirror correctly."),
+        ("extend", "Existing components are extended with optional parameters whose defaults keep today's behavior."),
+        ("states", "Each screen state can be shown by seeding its state class, which is how tests and verify render it."),
+        ("a11y", "Touch targets of at least 48 dp, semantics labels from l10n, and no fixed-height text containers."),
+        ("todos", "Unknown behavior (API calls, navigation) is a TODO(sauces) comment, never a fake."),
     ],
 }
 GENERIC_PRACTICES = [
-    "Design values come from the project's tokens and theme, not literals.",
-    "User-facing strings live in the project's string resources.",
-    "Existing components are extended, never silently replaced.",
+    ("tokens", "Design values come from the project's tokens and theme, not literals."),
+    ("strings", "User-facing strings live in the project's string resources."),
+    ("extend", "Existing components are extended, never silently replaced."),
 ]
 
 
@@ -70,6 +76,9 @@ def parse_args(argv=None):
     p.add_argument("--sauces-dir", default=".sauces", help="path to the .sauces/ folder (default: .sauces)")
     p.add_argument("--template", help="HTML template (default: the plugin's report-template.html)")
     p.add_argument("-o", "--output", help="output file (default: <sauces-dir>/report.html)")
+    p.add_argument("--allow-cdn", action="store_true",
+                   help="also load mermaid from jsdelivr (pinned version + SRI) for a richer graph; "
+                        "off by default so the report makes no network requests")
     return p.parse_args(argv)
 
 
@@ -87,26 +96,32 @@ class Inputs:
         self.dir = sauces
         self.root = sauces.parent
         self.problems = []
-        self.manifest = self._load("manifest.json")
-        self.profile = self._load("project-profile.json")
-        self.plan = self._load("plan.json")
-        self.audit = self._load("design-audit.json")
-        self.state = self._load("state.json")
-        self.todos = self._load("todos.json")
-        self.deviations = self._load("deviations.json")
-        self.verify = self._load("verify/summary.json")
+        self.manifest = self._load("manifest.json", dict)
+        self.profile = self._load("project-profile.json", dict)
+        self.plan = self._load("plan.json", dict)
+        self.audit = self._load("design-audit.json", dict)
+        self.state = self._load("state.json", dict)
+        self.todos = self._load("todos.json", list)
+        self.deviations = self._load("deviations.json", list)
+        self.verify = self._load("verify/summary.json", dict)
+        self.lint = self._load("lint.json", dict)
         plan_md = sauces / "plan.md"
         self.plan_md = plan_md.read_text(encoding="utf-8", errors="replace") if plan_md.is_file() else None
 
-    def _load(self, name):
+    def _load(self, name, kind):
         path = self.dir / name
         if not path.is_file():
             return None
         try:
-            return json.loads(path.read_text(encoding="utf-8"))
+            data = json.loads(path.read_text(encoding="utf-8"))
         except (ValueError, OSError) as exc:
             self.problems.append(f"{name}: {exc}")
             return None
+        if not isinstance(data, kind):
+            self.problems.append(f"{name}: expected a JSON {'object' if kind is dict else 'array'}, "
+                                 f"found {type(data).__name__}")
+            return None
+        return data
 
     def resolve(self, rel):
         """A project-relative path from a .sauces/ file. `.sauces/...` maps into this folder,
@@ -119,7 +134,7 @@ class Inputs:
     def project(self):
         if not isinstance(self.profile, dict):
             return None
-        projects = self.profile.get("projects") or []
+        projects = list_of(self.profile.get("projects"))
         platform = (self.plan or {}).get("platform")
         for proj in projects:
             if proj.get("platform") == platform:
@@ -131,6 +146,14 @@ class Inputs:
             return self.plan["platform"]
         proj = self.project()
         return proj.get("platform") if proj else None
+
+    def gitignores_verify(self):
+        """True when <root>/.gitignore already ignores .sauces/ or .sauces/verify/."""
+        try:
+            lines = (self.root / ".gitignore").read_text(encoding="utf-8", errors="replace").splitlines()
+        except OSError:
+            return False
+        return any(l.strip().strip("/") in (".sauces", ".sauces/verify", ".sauces/*") for l in lines)
 
 
 def not_run(what: str, stage: str) -> str:
@@ -213,6 +236,52 @@ def list_of(value):
     return [v for v in value if isinstance(v, dict)] if isinstance(value, list) else []
 
 
+DECISION_PRIORITY = ("extend", "new", "reuse", "token")
+
+
+def component_decisions(inputs):
+    """{decision: count} per distinct component (screens excluded). A component used several
+    times counts once, under its strongest decision (extend > new > reuse)."""
+    by_name = {}
+    for i in items(inputs):
+        if i.get("level") == "screen":
+            continue
+        by_name.setdefault(i.get("name"), set()).add(i.get("decision"))
+    counts = {d: 0 for d in DECISIONS}
+    for decisions in by_name.values():
+        for d in DECISION_PRIORITY:
+            if d in decisions:
+                counts[d] += 1
+                break
+    return counts
+
+
+def as_dict(value):
+    return value if isinstance(value, dict) else {}
+
+
+def string_list(value):
+    return [str(v) for v in value] if isinstance(value, list) else []
+
+
+def file_list(inputs, key):
+    return string_list((inputs.state or {}).get(key))
+
+
+def asset_landings(inputs):
+    """{asset name: project path} for design assets whose file name shows up among the files
+    Sauces generated or changed."""
+    files = file_list(inputs, "generated_files") + file_list(inputs, "changed_files")
+    out = {}
+    for a in list_of((inputs.manifest or {}).get("assets")):
+        base = Path(str(a.get("path", ""))).name
+        for f in files:
+            if base and Path(f).name == base:
+                out[a.get("name")] = f
+                break
+    return out
+
+
 # ---------- sections ----------
 
 def section_summary(inputs) -> str:
@@ -220,7 +289,7 @@ def section_summary(inputs) -> str:
         return not_run("manifest.json and plan.json", "cook")
     parts = []
     its = items(inputs)
-    counts = {d: sum(1 for i in its if i.get("decision") == d and i.get("level") != "screen") for d in DECISIONS}
+    counts = component_decisions(inputs)
     screens = [i for i in its if i.get("level") == "screen"]
     res = [r for r in results(inputs) if r.get("rendered")]
     threshold = (inputs.verify or {}).get("threshold", 90) if isinstance(inputs.verify, dict) else 90
@@ -245,12 +314,12 @@ def section_summary(inputs) -> str:
 
     proj = inputs.project()
     if proj:
-        loc = proj.get("localization") or {}
+        loc = as_dict(proj.get("localization"))
         facts = [
             ("Platform", proj.get("platform")),
             ("Architecture", proj.get("architecture")),
             ("State management", proj.get("state_management")),
-            ("Localization", f"{loc.get('system', '?')} · {', '.join(loc.get('locales') or []) or 'no locales'}"),
+            ("Localization", f"{loc.get('system', '?')} · {', '.join(string_list(loc.get('locales'))) or 'no locales'}"),
             ("Mode", (inputs.profile or {}).get("mode")),
         ]
         parts.append(table(["Project", ""], [[e(k), e(v)] for k, v in facts if v]))
@@ -285,13 +354,15 @@ def section_fidelity(inputs) -> str:
     for r in results(inputs):
         rid = str(r.get("id", ""))
         safe_id = rid if re.fullmatch(r"[A-Za-z0-9_-]+", rid) else None
-        devs = r.get("deviations") or []
+        devs = string_list(r.get("deviations"))
         if r.get("rendered") and safe_id:
             n = r.get("iterations") or 1
             it = inputs.dir / "verify" / safe_id / f"iter-{n}"
             ref = inputs.resolve(r.get("reference"))
+            rtl_png = inputs.dir / "verify" / safe_id / "rtl.png"
+            rtl_fig = figure(rtl_png, "RTL") if rtl_png.is_file() else ""
             images = ('<div class="triptych">' + figure(ref, "design") + figure(it / "rendered.png", "built")
-                      + figure(it / "diff.png", "difference") + "</div>")
+                      + figure(it / "diff.png", "difference") + rtl_fig + "</div>")
             cls = "pass" if r.get("passed") else "fail"
             score = f'<span class="score {cls}">{e(fmt_score(r.get("score")))}</span>'
             history = " → ".join(fmt_score(s) for s in r.get("scores") or [])
@@ -302,8 +373,8 @@ def section_fidelity(inputs) -> str:
             meta = ""
         notes = []
         notes += [f"Intentional deviation: <code>{e(d)}</code> (applied design suggestion, not fixed back)" for d in devs]
-        notes += [e(x) for x in r.get("remaining") or []]
-        notes += [f"RTL: {e(x)}" for x in r.get("rtl_issues") or []]
+        notes += [e(x) for x in string_list(r.get("remaining"))]
+        notes += [f"RTL: {e(x)}" for x in string_list(r.get("rtl_issues"))]
         note_html = "<ul>" + "".join(f"<li>{n}</li>" for n in notes) + "</ul>" if notes else ""
         shots.append(f'<article class="shot"><header><strong>{e(rid)}</strong>{score}</header>{meta}{images}{note_html}</article>')
     if not shots:
@@ -356,54 +427,119 @@ def _label(text):
     return re.sub(r'["#;<>]', "", str(text))
 
 
-def derived_graph(inputs) -> str:
+def graph_model(inputs):
+    """Screens, components and tokens from the plan. A component used on several screens is one
+    node holding every decision made for it. Edges are screen -> component only: the plan does
+    not say which component uses which token, so none are drawn."""
     its = items(inputs)
-    lines = ["graph LR"]
     screens = {}
     for i in its:
         ref = str(i.get("design_ref", ""))
         screen = ref.split("/", 1)[0] if "/" in ref else None
         if i.get("level") == "screen" and screen:
-            screens[screen] = i
-    for screen, i in screens.items():
-        lines.append(f'  {_node_id("s", screen)}["{_label(i.get("name") or screen)}"]')
-    seen = set()
+            screens[screen] = str(i.get("name") or screen)
+    comps, edges = {}, []
     for i in its:
-        ref = str(i.get("design_ref", ""))
         if i.get("level") in ("screen", "token"):
             continue
-        cid = _node_id("c", i.get("name"))
-        if cid not in seen:
-            lines.append(f'  {cid}["{_label(i.get("name"))} ({_label(i.get("decision"))})"]')
-            seen.add(cid)
+        name = str(i.get("name"))
+        decisions = comps.setdefault(name, [])
+        d = str(i.get("decision"))
+        if d not in decisions:
+            decisions.append(d)
+        ref = str(i.get("design_ref", ""))
         screen = ref.split("/", 1)[0] if "/" in ref else None
-        if screen in screens:
-            edge = f'  {_node_id("s", screen)} --> {cid}'
-            if edge not in lines:
-                lines.append(edge)
-    tokens = [i for i in its if i.get("level") == "token"]
-    for t in tokens:
-        tid = _node_id("t", t.get("name"))
-        lines.append(f'  {tid}(["{_label(t.get("name"))}"])')
-        for cid in sorted(seen):
-            lines.append(f"  {cid} -.-> {tid}")
+        if screen in screens and (screen, name) not in edges:
+            edges.append((screen, name))
+    tokens = []
+    for i in its:
+        if i.get("level") == "token" and str(i.get("name")) not in tokens:
+            tokens.append(str(i.get("name")))
+    return screens, {n: f"{n} ({', '.join(d)})" for n, d in comps.items()}, edges, tokens
+
+
+def derived_graph(inputs) -> str:
+    screens, comps, edges, tokens = graph_model(inputs)
+    lines = ["graph LR"]
+    for screen, label in screens.items():
+        lines.append(f'  {_node_id("s", screen)}["{_label(label)}"]')
+    for name, label in comps.items():
+        lines.append(f'  {_node_id("c", name)}["{_label(label)}"]')
+    for screen, name in edges:
+        lines.append(f'  {_node_id("s", screen)} --> {_node_id("c", name)}')
+    if tokens:
+        lines.append('  subgraph Tokens')
+        for t in tokens:
+            lines.append(f'    {_node_id("t", t)}(["{_label(t)}"])')
+        lines.append("  end")
     return "\n".join(lines)
 
 
-def section_graph(inputs) -> str:
+def graph_svg(inputs):
+    """The component graph as inline SVG (no script), or None when the plan has no items."""
+    screens, comps, edges, tokens = graph_model(inputs)
+    if not (screens or comps or tokens):
+        return None
+    row, box_h, col_w = 46, 32, 230
+    xs = {"s": 16, "c": 16 + col_w + 90, "t": 16 + 2 * (col_w + 90)}
+    pos = {}
+    out = []
+
+    def column(kind, labels):
+        for n, (key, label) in enumerate(labels):
+            pos[(kind, key)] = (xs[kind], 40 + n * row)
+
+    column("s", list(screens.items()))
+    column("c", list(comps.items()))
+    column("t", [(t, t) for t in tokens])
+    rows = max(len(screens), len(comps), len(tokens), 1)
+    height, width = 40 + rows * row, xs["t"] + col_w + 16
+    for screen, name in edges:
+        x1, y1 = pos[("s", screen)]
+        x2, y2 = pos[("c", name)]
+        out.append(f'<line x1="{x1 + col_w}" y1="{y1 + box_h // 2}" x2="{x2}" y2="{y2 + box_h // 2}" '
+                   f'stroke="var(--muted)" stroke-width="1.5"/>')
+    heads = {"s": "Screens", "c": "Components", "t": "Tokens"}
+    for kind, present in (("s", screens), ("c", comps), ("t", tokens)):
+        if present:
+            out.append(f'<text x="{xs[kind]}" y="22" fill="var(--muted)" font-size="12" font-weight="600">{heads[kind]}</text>')
+    labelled = [("s", screens.items()), ("c", comps.items()), ("t", [(t, t) for t in tokens])]
+    for kind, pairs in labelled:
+        for key, label in pairs:
+            x, y = pos[(kind, key)]
+            fill = {"s": "var(--accent-soft)", "c": "var(--card)", "t": "var(--bg)"}[kind]
+            out.append(f'<rect x="{x}" y="{y}" width="{col_w}" height="{box_h}" rx="8" fill="{fill}" stroke="var(--line)"/>'
+                       f'<text x="{x + 10}" y="{y + box_h // 2 + 4}" fill="var(--ink)" font-size="13">{e(label)}</text>')
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" '
+            f'style="max-width:100%;height:auto" role="img" aria-label="Component graph: screens, components and tokens">'
+            + "".join(out) + "</svg>")
+
+
+def section_graph(inputs, allow_cdn=False) -> str:
     source = None
     if inputs.plan_md:
         m = re.search(r"```mermaid\s*\n(.*?)```", inputs.plan_md, re.S)
         if m and m.group(1).strip():
             source = m.group(1).strip()
+    svg = graph_svg(inputs)
     if source is None:
-        if not items(inputs):
+        if svg is None:
             return not_run("plan.json", "plan")
         source = derived_graph(inputs)
     src = e(source)
-    return (f'<div class="graph"><pre class="mermaid">{src}</pre></div>'
-            f"<details><summary>Graph source (shown as text when the mermaid script can't load)</summary>"
-            f"<pre>{src}</pre></details>")
+    # The plan's own mermaid diagram is only drawn with --allow-cdn; otherwise the derived SVG
+    # (when the plan has items) and the source as text.
+    if allow_cdn:
+        shown = f'<div class="graph"><pre class="mermaid">{src}</pre></div>'
+        note = "Graph source"
+    elif svg is not None:
+        shown = f'<div class="graph">{svg}</div>'
+        note = "Graph source (mermaid syntax)"
+    else:
+        shown = ""
+        note = "Graph source (mermaid syntax; run with --allow-cdn to draw it)"
+    open_attr = "" if shown else " open"
+    return f"{shown}<details{open_attr}><summary>{note}</summary><pre>{src}</pre></details>"
 
 
 def _untranslated(inputs):
@@ -425,14 +561,17 @@ def section_localization(inputs) -> str:
     strs = strings(inputs)
     added = sum(1 for s in strs if not s.get("existing"))
     reused = sum(1 for s in strs if s.get("existing"))
-    loc = (proj or {}).get("localization") or {}
-    locales = loc.get("locales") or []
+    loc = as_dict((proj or {}).get("localization"))
+    locales = string_list(loc.get("locales"))
     untranslated = _untranslated(inputs)
-    rtl_issues = [(r.get("id"), x) for r in results(inputs) for x in r.get("rtl_issues") or []]
-    assets = list_of((inputs.manifest or {}).get("assets")) if isinstance(inputs.manifest, dict) else []
+    rtl_issues = [(r.get("id"), x) for r in results(inputs) for x in string_list(r.get("rtl_issues"))]
+    assets = list_of((inputs.manifest or {}).get("assets"))
+    landed = asset_landings(inputs)
     cards = [card(added, "keys added", accent=True), card(reused, "keys reused"),
              card(len(locales) or "–", "locales"), card(sum(untranslated.values()), "strings to translate"),
-             card(len(rtl_issues) if inputs.verify is not None else "–", "RTL issues"), card(len(assets), "assets")]
+             card(len(rtl_issues) if inputs.verify is not None else "–", "RTL issues"),
+             card(len(landed) if inputs.state is not None else "–", "assets created"),
+             card(len(assets), "design assets")]
     parts.append('<div class="cards">' + "".join(cards) + "</div>")
     if proj:
         rtl = loc.get("rtl") or any(l.split("_")[0].split("-")[0] in RTL_LOCALES for l in locales)
@@ -456,8 +595,10 @@ def section_localization(inputs) -> str:
     else:
         parts.append('<p class="muted">No RTL issues found in the rendered states.</p>')
     if assets:
-        rows = [[e(a.get("name")), badge(a.get("kind")), f"<code>{e(a.get('path'))}</code>"] for a in assets]
-        parts.append("<h3>Assets</h3>" + table(["Asset", "Kind", "Source"], rows))
+        rows = [[e(a.get("name")), badge(a.get("kind")), f"<code>{e(a.get('path'))}</code>",
+                 f"<code>{e(landed[a.get('name')])}</code>" if a.get("name") in landed else badge("not in project", "keep")]
+                for a in assets]
+        parts.append("<h3>Assets</h3>" + table(["Asset", "Kind", "Extracted from design", "Created in project"], rows))
     return "".join(parts)
 
 
@@ -528,6 +669,18 @@ def section_audit(inputs) -> str:
     return "".join(parts)
 
 
+def section_files(inputs) -> str:
+    if inputs.state is None:
+        return not_run("state.json", "build")
+    gen, chg = file_list(inputs, "generated_files"), file_list(inputs, "changed_files")
+    if not gen and not chg:
+        return '<p class="muted">No files recorded: Sauces has not written to the project yet.</p>'
+    rows = [[f"<code>{e(f)}</code>", badge("new", "new")] for f in gen]
+    rows += [[f"<code>{e(f)}</code>", badge("changed", "extend")] for f in chg]
+    return (f'<p class="muted">{len(gen)} created, {len(chg)} changed. Generated code carries no markers, '
+            "so use this list to review or revert Sauces' work.</p>" + table(["File", ""], rows))
+
+
 def section_todos(inputs) -> str:
     if inputs.todos is None:
         return not_run("todos.json", "build")
@@ -538,12 +691,71 @@ def section_todos(inputs) -> str:
     return table(["Where", "What"], rows)
 
 
+def _sample(findings, n=3):
+    return ", ".join(f"{f.get('file')}:{f.get('line')}" for f in findings[:n]) + (" …" if len(findings) > n else "")
+
+
+def practice_checks(inputs, platform):
+    """[(text, state, evidence)] with state 'pass', 'warn' or 'unchecked'. A practice is ticked
+    only when a result file shows it; with no evidence it is 'not checked'."""
+    rendered = [r for r in results(inputs) if r.get("rendered")]
+    rtl = sum(len(string_list(r.get("rtl_issues"))) for r in results(inputs))
+    lint = inputs.lint.get("findings") if isinstance(inputs.lint, dict) and isinstance(inputs.lint.get("findings"), list) else None
+    lint = [f for f in lint if isinstance(f, dict)] if lint is not None else None
+    sugs = [s for s in list_of((inputs.plan or {}).get("design_suggestions")) if s.get("category") == "accessibility"]
+    code_todos = [t for t in list_of(inputs.todos) if not re.search(r"translate \d+", str(t.get("text", "")))]
+    none = ("unchecked", "no evidence in .sauces/")
+
+    def lint_check(rule, label):
+        if lint is None:
+            return ("unchecked", "no lint results (.sauces/lint.json)")
+        bad = [f for f in lint if f.get("rule") == rule]
+        return ("warn", f"{len(bad)} {label} in {_sample(bad)}") if bad else ("pass", f"lint: no {label}")
+
+    def evidence(key):
+        if key == "tokens":
+            return lint_check("hardcoded-color", "color literal(s)")
+        if key == "strings":
+            return lint_check("hardcoded-string", "hardcoded string(s)")
+        if key == "rtl":
+            if rtl:
+                return ("warn", f"{rtl} RTL issue(s), see Localization")
+            if rendered:
+                return ("pass", f"no RTL issues in {len(rendered)} rendered state(s)")
+            return ("unchecked", "verify has not rendered any state")
+        if key == "states":
+            res = results(inputs)
+            if not res:
+                return ("unchecked", "verify has not run")
+            if len(rendered) == len(res):
+                return ("pass", f"{len(rendered)} of {len(res)} states rendered from seeded state")
+            return ("warn", f"{len(res) - len(rendered)} of {len(res)} states could not be rendered")
+        if key == "a11y":
+            kept = [s for s in sugs if s.get("choice") != "apply"]
+            if kept:
+                return ("warn", "kept without applying: " + ", ".join(str(s.get("title")) for s in kept))
+            if sugs:
+                return ("pass", "applied: " + ", ".join(str(s.get("title")) for s in sugs))
+            return none
+        if key == "todos":
+            if code_todos:
+                return ("pass", f"{len(code_todos)} TODO(sauces) marker(s) recorded in todos.json")
+            return none
+        return ("unchecked", "needs a code review; the report cannot verify it")
+
+    return [(text, *evidence(key)) for key, text in PRACTICES.get(platform, GENERIC_PRACTICES)]
+
+
 def section_practices(inputs) -> str:
     platform = inputs.platform()
     if platform is None:
         return not_run("project-profile.json", "scan-project")
-    practices = PRACTICES.get(platform, GENERIC_PRACTICES)
-    applied = '<ul class="clean">' + "".join(f"<li>✓ {e(p)}</li>" for p in practices) + "</ul>"
+    marks = {"pass": ("✓ followed", "pass"), "warn": ("⚠ check", "medium"), "unchecked": ("not checked", "keep")}
+    lis = []
+    for text, state, why in practice_checks(inputs, platform):
+        label, kind = marks[state]
+        lis.append(f"<li>{badge(label, kind)} {e(text)} <span class=\"muted\">{e(why)}</span></li>")
+    applied = '<ul class="clean">' + "".join(lis) + "</ul>"
     steps = []
     todos = list_of(inputs.todos)
     code_todos = [t for t in todos if not re.search(r"translate \d+", str(t.get("text", "")))]
@@ -557,7 +769,7 @@ def section_practices(inputs) -> str:
     unrendered = [r for r in results(inputs) if not r.get("rendered")]
     if unrendered:
         steps.append("Check the unrendered states by hand with <code>.sauces/verify/checklist.md</code>.")
-    rtl = sum(len(r.get("rtl_issues") or []) for r in results(inputs))
+    rtl = sum(len(string_list(r.get("rtl_issues"))) for r in results(inputs))
     if rtl:
         steps.append(f"Fix {rtl} right-to-left issue(s) listed under Localization.")
     if isinstance(inputs.manifest, dict) and any(s.get("status") == "unreadable" for s in list_of(inputs.manifest.get("sources"))):
@@ -568,9 +780,10 @@ def section_practices(inputs) -> str:
         steps.append(f"Reconsider {len(kept)} high-severity design suggestion(s) you kept.")
     if inputs.verify is None:
         steps.append("Run <code>/sauces:verify</code> to score the built screens against the design.")
-    steps.append("Add <code>.sauces/verify/</code> to <code>.gitignore</code> if it isn't there.")
+    if not inputs.gitignores_verify():
+        steps.append("Add <code>.sauces/verify/</code> to <code>.gitignore</code>.")
     next_html = "<ol>" + "".join(f"<li>{s}</li>" for s in steps) + "</ol>"
-    return (f'<div class="cols"><div><h3>Followed in the generated code ({e(platform)})</h3>{applied}</div>'
+    return (f'<div class="cols"><div><h3>Practices checked against this run ({e(platform)})</h3>{applied}</div>'
             f"<div><h3>Next steps</h3>{next_html}</div></div>")
 
 
@@ -616,7 +829,14 @@ def heading(inputs):
     return title, " · ".join(sub) or "Sauces pipeline results"
 
 
-def render(inputs, template: str) -> str:
+def mermaid_script() -> str:
+    return (f'<script src="https://cdn.jsdelivr.net/npm/mermaid@{MERMAID_VERSION}/dist/mermaid.min.js" '
+            f'integrity="{MERMAID_SRI}" crossorigin="anonymous"></script>\n'
+            "<script>if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: "
+            "matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' }); }</script>")
+
+
+def render(inputs, template: str, allow_cdn: bool = False) -> str:
     title, sub = heading(inputs)
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     values = {
@@ -626,12 +846,14 @@ def render(inputs, template: str) -> str:
         "summary": section_summary(inputs),
         "fidelity": section_fidelity(inputs),
         "design_system": section_design_system(inputs),
-        "graph": section_graph(inputs),
+        "graph": section_graph(inputs, allow_cdn),
         "localization": section_localization(inputs),
         "audit": section_audit(inputs),
+        "files": section_files(inputs),
         "todos": section_todos(inputs),
         "practices": section_practices(inputs),
         "recommendations": section_recommendations(inputs),
+        "mermaid": mermaid_script() if allow_cdn else "",
         "footer": e(f"Generated by Sauces on {generated}. We make the sauce; you make the sandwich."),
     }
     # One pass over the template, so placeholder-like text inside the values stays as is.
@@ -650,7 +872,7 @@ def main(argv=None):
         return 2
     require_deps()
     inputs = Inputs(sauces)
-    html = render(inputs, template_path.read_text(encoding="utf-8"))
+    html = render(inputs, template_path.read_text(encoding="utf-8"), args.allow_cdn)
     out = Path(args.output) if args.output else sauces / "report.html"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html, encoding="utf-8")

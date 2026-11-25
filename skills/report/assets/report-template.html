@@ -84,7 +84,7 @@
   .shot header strong { font-size: 15px; }
   .score { font-size: 26px; font-weight: 700; }
   .score.pass { color: var(--ok); } .score.fail { color: var(--bad); }
-  .triptych { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .triptych { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 8px; }
   .triptych figure { margin: 0; }
   .triptych img { width: 100%; border-radius: 6px; border: 1px solid var(--line); display: block; background: #fff; }
   .triptych figcaption { font-size: 11px; color: var(--muted); text-align: center; margin-top: 4px; }
@@ -114,7 +114,7 @@
 </header>
 <nav class="toc"><div class="wrap">
   <a href="#summary">Summary</a><a href="#fidelity">Fidelity</a><a href="#design-system">Design system</a>
-  <a href="#graph">Component graph</a><a href="#localization">Localization</a><a href="#audit">Design audit</a>
+  <a href="#graph">Component graph</a><a href="#localization">Localization</a><a href="#audit">Design audit</a><a href="#files">Files</a>
   <a href="#todos">TODOs</a><a href="#practices">Best practices</a><a href="#recommendations">Recommendations</a>
 </div></nav>
 <main class="wrap">
@@ -148,6 +148,11 @@
     <p class="lead">Measured facts about the design itself, and the suggestions you kept or applied.</p>
     {{audit}}
   </section>
+  <section id="files">
+    <h2>Files written</h2>
+    <p class="lead">Everything Sauces created or changed in your project.</p>
+    {{files}}
+  </section>
   <section id="todos">
     <h2>TODOs for a human</h2>
     <p class="lead">Behavior the design doesn't show. Sauces marked it instead of guessing.</p>
@@ -155,7 +160,7 @@
   </section>
   <section id="practices">
     <h2>Best practices &amp; next steps</h2>
-    <p class="lead">What the generated code follows, and what to do next.</p>
+    <p class="lead">Each practice is checked against this run's results. With no evidence it says &ldquo;not checked&rdquo;. Then what to do next.</p>
     {{practices}}
   </section>
   <section id="recommendations">
@@ -165,11 +170,6 @@
   </section>
 </main>
 <footer>{{footer}}</footer>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
-<script>
-  if (window.mermaid) {
-    mermaid.initialize({ startOnLoad: true, theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' });
-  }
-</script>
+{{mermaid}}
 </body>
 </html>
