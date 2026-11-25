@@ -124,7 +124,8 @@ sys.exit(0 if os.environ["EVAL_OUTCOME"] == "success" else 1)
     }
     r = run_script(
         "eval.py", "--run", "--fixtures", "flutter-bloc", "--results", str(tmp_path / "run"),
-        "--builds-cmd", "true", "--timeout", "2", env=env,
+        # Only the timeout case needs a short limit; a tight one makes the others flaky under load.
+        "--builds-cmd", "true", "--timeout", "2" if outcome == "timeout" else "30", env=env,
     )
     expected = "PASS" if outcome == "success" else "FAIL"
     assert r.returncode == (0 if outcome == "success" else 1), r.stdout + r.stderr
