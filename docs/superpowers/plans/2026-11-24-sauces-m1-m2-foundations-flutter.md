@@ -242,7 +242,8 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
 - Rules live in a dict, `RULES[platform] -> list[(rule_id, regex)]`, so later plans can add platforms. Flutter rules:
   - `hardcoded-color`: `Color\(0x`, `Color\.fromARGB`, `Color\.fromRGBO`, `\bColors\.(?!transparent\b)`
   - `hardcoded-string`: a non-empty string literal as the first positional argument of `Text(` or `SelectableText(`, or as the value of `hintText:`, `labelText:`, `helperText:`, `errorText:`, `tooltip:` or `semanticsLabel:`
-- Lines containing `// sauces-lint-ignore` are skipped. Files matching `--allow` globs are skipped; by default those are `**/theme/**`, `**/*_strings.dart`, `**/l10n/**` and `**/*.g.dart`.
+- Lines containing `// sauces-lint-ignore` are skipped.
+- (Added in Task 13) `--allow-colors GLOB` skips only the `hardcoded-color` rule for matching files (project token/theme files); string rules still apply. Files matching `--allow` globs are skipped; by default those are `**/theme/**`, `**/*_strings.dart`, `**/l10n/**` and `**/*.g.dart`.
 
 - [ ] **Step 1: Write failing tests:**
   - `test_flags_hex_color`
@@ -353,6 +354,25 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
 - [ ] **Step 4:** Run. Expected: PASS. Then run validate.
 - [ ] **Step 5:** Commit `feat: ingest + design-analyst`.
 
+### Task 11b: Design-system structure signals (design §5.4a)
+
+**Files:**
+- Modify: `skills/ingest/references/manifest-schema.json`, `skills/scan-project/references/profile-schema.json`, `skills/plan/references/plan-schema.json`, `skills/ingest/SKILL.md`, `skills/ingest/references/figma.md`, `skills/scan-project/SKILL.md`, `skills/scan-project/references/flutter.md`, `tests/scripts/test_check_json.py`, `tests/skills/test_scan.py`, `tests/skills/test_ingest.py`
+- Create: `skills/plan/references/design-system-patterns.md`
+
+**Interfaces:**
+- Schema additions (all optional, so existing outputs stay valid):
+  - manifest `design_system`: `{signals[] {kind: figma-naming|component-set|variables|library|repetition, detail, evidence?}, component_candidates[] {name, occurrences, screens[], variants[]}}`
+  - profile `projects[].component_structure`: `{pattern: atomic|layered|feature-first|custom|none, paths[], evidence[]}`
+  - plan `structure`: `{recommended: atomic|layered|feature-first|follow, choice, reasons[], options[] {id, label, folders[]}}`; plan `items[].layer` (string)
+- `design-system-patterns.md`: the four patterns of design §5.4a with per-platform folder mapping (Flutter now; Compose/SwiftUI/CMP rows marked "next plans"), the scoring rules from signals, and how `level` maps to `layer`.
+
+- [ ] **Step 1: Write failing tests:** schema tests accepting the new fields and rejecting a bad `structure.recommended`; `test_scan_flutter_fixture` also asserts `component_structure.pattern == "feature-first"` (fixture: `lib/core/widgets` + `lib/features/*`); `test_ingest_login` asserts `design_system.component_candidates` names include a text field and a button with `occurrences >= 3`.
+- [ ] **Step 2:** Run. Expected: FAIL.
+- [ ] **Step 3:** Implement schema changes, skill/reference edits, and the patterns reference.
+- [ ] **Step 4:** Run (skill tests once each). Expected: PASS. Then run validate.
+- [ ] **Step 5:** Commit `feat: design-system structure signals`.
+
 ### Task 12: plan skill with recommendations
 
 **Files:**
@@ -370,7 +390,9 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
   - If `.sauces/eval-approve` exists, approve with `approved_by: "eval"`, keep every `choice: "keep"`, and say so in the output.
 - `recommendations.md`: maps each finding area to option templates, each with its concrete changes and files. Strings without localization follow design §5.2. Adding screenshot tooling is a `dependency_changes` entry that needs approval.
 
-- [ ] **Step 1: Write failing tests** (marker `skill`): run scan + ingest + `/sauces:plan` in a flutter-bloc copy.
+- Structure (design §5.4a): `plan` reads `references/design-system-patterns.md`, scores the patterns, writes `structure` with reasons, lists the pattern choice first in the approval message, and sets every item's `layer`. Eval mode takes the recommendation.
+
+- [ ] **Step 1: Write failing tests** (marker `skill`): run scan + ingest + `/sauces:plan` in a flutter-bloc copy. Also `test_plan_structure`: `structure.recommended == "follow"` for the fixture, `choice == recommended` in eval mode, ≥ 2 `reasons`, and every item has a non-empty `layer`.
   - `test_plan_reuses_existing`: there are items whose `existing_path` ends in `app_button.dart` and `app_text_field.dart`, with a decision of `reuse` or `extend`. No `new` item is named like a button or text field.
   - `test_plan_recommendation_for_card_color`: there's a recommendation whose `finding_id` matches the colors finding, with options including `keep`, and `choice == "keep"`.
   - `test_plan_strings_cover_copy`: the `strings[].value` set contains all six copy strings from Global Constraints.
@@ -380,6 +402,27 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
 - [ ] **Step 3:** Write the skill and the reference.
 - [ ] **Step 4:** Run. Expected: PASS. Then run validate.
 - [ ] **Step 5:** Commit `feat: plan with recommendations and approval gate`.
+
+### Task 12b: Design suggestions + `design_audit.py` (design §5.4b)
+
+**Files:**
+- Create: `scripts/design_audit.py`, `tests/scripts/test_design_audit.py`, `skills/plan/references/design-review.md`
+- Modify: `skills/plan/references/plan-schema.json`, `skills/plan/SKILL.md`, `tests/skills/test_plan.py`, `tests/scripts/test_check_json.py`
+
+**Interfaces:**
+- `design_audit.py --manifest .sauces/manifest.json [-o .sauces/design-audit.json] [--grid 4]` (stdlib only) writes `{version, findings[] {id, category: accessibility|consistency|states|platform|localization|ux, severity: high|medium|low, screen, state?, detail, measured: object, guideline}}`. Importable functions (the report reuses their output, not their code): `delta_e76(hex_a, hex_b) -> float`, `near_duplicate_colors(hexes, threshold=3.0) -> list[tuple[str,str,float]]`, `contrast_ratio(fg, bg) -> float` (WCAG 2.x), `spacing_outliers(values, grid=4) -> list[float]`, `missing_states(manifest) -> dict[str, list[str]]`, `small_touch_targets(manifest, min_dp=48) -> list[dict]`, `small_text(manifest, min_px=12) -> list[dict]`. Contrast pairs come from text nodes' `style.color` over the nearest ancestor background (fallback: surface token).
+- plan schema addition (optional field): `design_suggestions[] {id, audit_id?, category, severity, title, evidence, change, why, guideline, choice: keep|apply}`; `choice` defaults to `keep`.
+- `design-review.md`: the category checklist of design §5.4b with per-platform conventions (Material vs HIG), how to turn audit findings into suggestions, plus judgement-based checks the script can't measure (primary-action hierarchy, error copy specificity, text-expansion risk), each requiring a cited principle.
+- plan SKILL.md: run `design_audit.py`, write `design_suggestions` + a "Design suggestions" section in plan.md (sorted by severity), ask for keep/apply choices in the same approval message; eval keeps all.
+
+- [ ] **Step 1: Write failing tests:**
+  - `test_contrast_black_white_is_21` (±0.01), `test_contrast_aa_failure` (`#777777` on `#FFFFFF` < 4.5), `test_near_duplicates` (`#3D5AFE`/`#3E5BFE` flagged; `#3D5AFE`/`#B3261E` not), `test_spacing_outliers` (`[4,8,13,16]` → `[13]`), `test_missing_states` (login with only default → loading, error), `test_small_touch_target` (a 36-px-high button node flagged), `test_audit_cli_writes_findings` (canned manifest → JSON with those categories).
+  - schema: plan accepts `design_suggestions` and rejects `choice: "maybe"`.
+  - skill (`test_plan.py::test_plan_design_suggestions`): on the sample, ≥ 1 suggestion, every one has non-empty `guideline` and `evidence`, all `choice == "keep"` in eval mode, and plan.md has a "Design suggestions" section.
+- [ ] **Step 2:** Run. Expected: FAIL.
+- [ ] **Step 3:** Implement script, schema, reference and skill changes.
+- [ ] **Step 4:** Run. Expected: PASS. Then run validate.
+- [ ] **Step 5:** Commit `feat: design suggestions and design audit`.
 
 ### Task 13: build skill (Flutter) + component-builder agent
 
@@ -393,7 +436,7 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
 - SKILL.md:
   - Refuse unless `approved` is true.
   - Build in this order: tokens → assets → atoms → molecules → organisms → screens.
-  - Apply only chosen recommendations.
+  - Apply only chosen recommendations, and implement every design suggestion with `choice: "apply"` as the improved design (record each in state.json `changed_files` context and in `.sauces/deviations.json` `[{suggestion_id, screen, state, region, note}]`).
   - After building, run `lint_generated.py` on the generated/changed Dart files and fix every finding.
   - Run `flutter gen-l10n` (when the project uses ARB) and `flutter analyze`, and fix errors.
   - Write a `TODO(sauces): …` for unknown behavior and list them in `.sauces/todos.json` (`[{file, line, text}]`).
@@ -420,6 +463,7 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
   - `test_arb_keys_in_all_locales`: `app_en.arb` and `app_ar.arb` have identical non-`@` key sets, which include ≥ 6 new keys.
   - `test_existing_components_not_replaced` *(Review Focus 3)*: for `app_button.dart` and `app_text_field.dart`, `git diff --numstat` shows deletions ≤ 3, and every pre-existing public constructor parameter is still present (regex over the old and new file).
   - `test_login_page_exists`: a file under `lib/features/login/` defines a `LoginPage` widget and a Cubit.
+  - `test_files_follow_structure`: every generated file's path matches the folder of its plan item's `layer` under the chosen pattern (design §5.4a).
 - [ ] **Step 2:** Run. Expected: FAIL.
 - [ ] **Step 3:** Write the skill, reference and agent.
 - [ ] **Step 4:** Run. Expected: PASS. Then run validate.
@@ -433,14 +477,15 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
 
 **Interfaces:**
 - Consumes: `visual_diff.py`, the manifest references, `generated_files`, plan `dependency_changes` (golden tooling is plain `flutter_test`, so no new dependency is needed for Flutter).
-- Produces: `.sauces/verify/<screen>--<state>/iter-<n>/{rendered.png,diff.png,score.json}`, `.sauces/verify/<screen>--<state>/rtl.png`, and `.sauces/verify/summary.json` `{version, results:[{id, score, passed, iterations, rendered: true|false, rtl_issues:[string]}]}`.
+- Produces: `.sauces/verify/<screen>--<state>/iter-<n>/{rendered.png,diff.png,score.json}`, `.sauces/verify/<screen>--<state>/rtl.png`, and `.sauces/verify/summary.json` `{version, platform, threshold, renderer, results:[{id, screen, state, reference, rendered: true|false, score, passed, iterations, scores[], rtl_issues:[string], deviations:[suggestion_id], remaining:[string]}]}`, validated by `skills/verify/references/summary-schema.json`.
 - `flutter.md` (verify):
-  - Write `test/sauces/<screen>_golden_test.dart`.
+  - Write `test/sauces/<screen>_render_test.dart`. *(Changed 2026-11-25: a capture-only test, not `matchesGoldenFile`. Committed goldens break on other machines' font rasterization and after every UI change; the capture test writes PNGs only with `--dart-define=SAUCES_RENDER_DIR=<dir>` and is otherwise a smoke test that fails only on exceptions/overflows. It also sets `debugShowCheckedModeBanner: false`, `debugDisableShadows = false`, and uses fixed pumps because spinners never settle.)*
   - Load the bundled fonts with `FontLoader` before pumping, since goldens otherwise use Ahem.
   - Set `tester.view.physicalSize = Size(780,1688)` and `devicePixelRatio = 2`.
   - Pump each state by giving the Cubit a seeded state.
-  - Run `flutter test --update-goldens test/sauces/`.
+  - Run `flutter test --dart-define="SAUCES_RENDER_DIR=$PWD/.sauces/verify/_render" test/sauces/`.
   - The RTL pass pumps with `locale: Locale('ar')`. Check for overflow errors in the test output and compare the mirrored layout, recording any issues as `rtl_issues`.
+- Intentional deviations: read `.sauces/deviations.json`; list them beside the score in `summary.json` (`deviations: [suggestion_id]`) and never "fix" them back.
 - Loop: when a score is below the threshold, the fidelity-checker proposes fixes, the build rules apply them, and the screen is re-rendered, for at most 3 iterations. Then record and move on. If the render fails entirely, write `rendered: false` and a manual checklist to `.sauces/verify/checklist.md`, and say so.
 
 - [ ] **Step 1: Write failing tests** (marker `skill`, continuing the Task 13 pipeline):
@@ -462,20 +507,11 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
 - Consumes: every `.sauces/` file (missing files make their section say "not run").
 - Produces:
   - `report_render.py --sauces-dir D [--template T] [-o out.html]`, which writes `report.html`.
-  - Importable functions:
-    - `delta_e76(hex_a: str, hex_b: str) -> float`
-    - `near_duplicate_colors(hexes: list[str], threshold: float = 3.0) -> list[tuple[str,str,float]]`
-    - `contrast_ratio(fg: str, bg: str) -> float` (WCAG 2.x relative luminance)
-    - `spacing_outliers(values: list[float], grid: int = 4) -> list[float]`
-    - `missing_states(manifest: dict) -> dict[str, list[str]]` (expected loading, error and empty for screens with inputs or lists; default only otherwise)
-- The template has sections with ids `summary`, `graph`, `localization`, `audit`, `todos`, `practices`, `recommendations`. The CSS is inline. The only external resource is the mermaid CDN `<script>`, with the graph's source also shown in a `<pre>` fallback.
+  - The audit section renders `.sauces/design-audit.json` (Task 12b) and the plan's `design_suggestions` with their keep/apply decisions; report_render does not recompute audit facts.
+- The template has sections with ids `summary`, `design-system`, `graph`, `localization`, `audit`, `todos`, `practices`, `recommendations`. `design-system` shows the chosen pattern, its reasons and components per layer. The CSS is inline. The only external resource is the mermaid CDN `<script>`, with the graph's source also shown in a `<pre>` fallback.
 
 - [ ] **Step 1: Write failing tests:**
-  - `test_contrast_black_white_is_21`: within 0.01.
-  - `test_contrast_aa_failure`: `#777777` on `#FFFFFF` < 4.5.
-  - `test_near_duplicates`: `#3D5AFE` and `#3E5BFE` are flagged, and `#3D5AFE` and `#B3261E` are not.
-  - `test_spacing_outliers`: given `[4,8,13,16]`, returns `[13]`.
-  - `test_missing_states`: a login screen with only `default` reports `loading` and `error` missing.
+  - `test_audit_section_lists_suggestions`: the canned sample's design suggestions appear with their decisions and guidelines.
   - `test_render_sections`: render `tests/data/sauces_sample`, and every section id is present.
   - `test_self_contained`: no `<link rel="stylesheet"`, and the only `src=` that starts with `http` is the mermaid script.
   - `test_missing_inputs`: rendering a folder with only manifest.json exits 0 and contains `not run`.
@@ -487,7 +523,7 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
 ### Task 16: scaffold skill (Flutter create mode)
 
 **Files:**
-- Create: `skills/scaffold/SKILL.md`, `skills/scaffold/references/flutter.md`, `skills/scaffold/assets/flutter/**` (an overlay: `lib/app.dart`, `lib/core/theme/app_theme.dart`, `lib/core/theme/app_colors.dart`, `lib/l10n/app_en.arb`, `lib/l10n/app_ar.arb`, `l10n.yaml`, `pubspec.additions.yaml`, `test/sauces/README.md`), `tests/skills/test_scaffold.py`
+- Create: `skills/scaffold/SKILL.md`, `skills/scaffold/references/flutter.md`, `skills/scaffold/assets/flutter/**` (an overlay: `lib/app.dart`, `lib/core/theme/app_theme.dart`, `lib/core/theme/app_colors.dart`, `lib/l10n/app_en.arb`, `lib/l10n/app_ar.arb`, `l10n.yaml`, `pubspec.additions.yaml`, `test/sauces/README.md`; also `lib/main.dart`, `lib/l10n/l10n.dart`, a starter `lib/features/home/view/home_page.dart`, `test/helpers/pump_app.dart` and `test/app_test.dart`, which replaces the counter `widget_test.dart` that `flutter create` writes and that fails once `main.dart` changes), `tests/skills/test_scaffold.py`
 
 **Interfaces:**
 - Consumes: profile `mode == "empty"`.
@@ -496,6 +532,7 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
   - Confirm the platform(s), showing defaults marked "(Recommended)" with overrides allowed. Eval mode takes the defaults. Only Flutter is implemented in this plan; other platforms say "coming in a later version" and stop.
   - Refuse a non-empty target folder unless the user confirms. In eval mode, always refuse.
   - Run `flutter create --org <org> --project-name <name> --platforms android,ios flutter`.
+  - Create the folders of the design-system pattern (design §5.4a) recommended from the manifest's signals, or the one the user picks (eval mode: recommended); record it in the project README.
   - Apply the overlay and merge `pubspec.additions.yaml` (flutter_bloc, flutter_localizations, intl, `generate: true`, a fonts placeholder).
   - Run `flutter pub get`, `flutter gen-l10n` and `flutter analyze`.
   - Record the dependency versions it picked (latest stable via `flutter pub add`) and the date in the project's README.
@@ -541,3 +578,21 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
 - [ ] **Step 4:** Run all tests: `.venv/bin/python -m pytest -v` and `.venv/bin/python -m pytest -m skill -v`. Expected: PASS.
 - [ ] **Step 5:** **Milestone 2 exit:** `.venv/bin/python scripts/eval.py --run --fixtures flutter-bloc,empty` passes both rows. Commit `eval.md` as the baseline, and `claude plugin validate .` passes.
 - [ ] **Step 6:** Commit `feat: cook orchestration and eval; milestone 2`.
+
+### Task 18: Hardening and test matrix (added 2026-11-24 at the user's request: "test it well")
+
+**Goal:** Prove Sauces holds up beyond the one fixture and one design it was built against, and that LLM-driven stages are stable across runs.
+
+**Files:**
+- Create: `examples/targets/flutter-riverpod/` (Riverpod + go_router, `lib/src/` layout, **no** localization, a `functions/` Firebase folder beside the app, one hard-coded string), `examples/targets/flutter-atomic/` (BLoC, `lib/design_system/{atoms,molecules,organisms}`, ARB en only, no RTL), `examples/designs/onboarding/` (3 screens: welcome, list with items, empty list; plus a dark-mode variant of welcome; rendered like Task 9), `tests/skills/test_matrix.py`, `scripts/dev/stability.sh`, `docs/superpowers/test-report-m2.md`
+- Modify: `scripts/eval.py` (fixture × design matrix)
+
+- [ ] **Step 1: Fixture tests first:** each new fixture builds (`flutter analyze`, `flutter test`) and has exactly its documented lint gaps (pure-Python test, like Task 8).
+- [ ] **Step 2: Matrix skill tests** (`test_matrix.py`, marker `skill`):
+  - riverpod fixture: scan gives `state_management == "riverpod"`, `localization.system == "none"`, mode `existing` (NOT `ambiguous` despite `functions/`), a `strings` finding; plan recommends `follow`; build puts strings in a feature strings class (design §5.2) and lint passes; a recommendation offers proper localization.
+  - atomic fixture: scan gives `component_structure.pattern == "atomic"`; plan recommends `follow` and new components land in the atomic layers.
+  - onboarding design into the **empty** target: ingest finds 3 screens and a `dark` state; create mode recommends a pattern from the scoring table with reasons; design suggestions include a missing-state finding; scaffold + build + verify pass the eval gates.
+- [ ] **Step 3: Stability:** `scripts/dev/stability.sh` runs every skill test 3× and reports pass rate per test. Target 100%; anything flaky gets its root cause fixed (tighter instructions or a less brittle assertion), never a retry loop.
+- [ ] **Step 4: Real-world smoke (read-only):** shallow-clone 3 public open-source Flutter apps of different styles into the scratch folder (never committed), run `scan-project` and `plan` (eval mode) on each, and record in `test-report-m2.md`: valid JSON (yes/no), detected stack vs actual, findings quality, any crash or misleading output. Every real defect found becomes a fix with a regression test.
+- [ ] **Step 5: Visual check:** for every rendered screen in the matrix, the controller views rendered.png beside the reference and diff.png and records a one-line judgement in the test report (a score ≥ 90 that still looks wrong is a defect).
+- [ ] **Step 6:** `scripts/eval.py --run` over the full matrix; commit `eval.md` and `test-report-m2.md`; commit `test: hardening matrix, stability and real-world smoke`.

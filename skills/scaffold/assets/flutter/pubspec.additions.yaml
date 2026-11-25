@@ -1,0 +1,24 @@
+# Applied by the scaffold skill on top of the pubspec.yaml that `flutter create`
+# wrote. This file is a recipe, not a pubspec.
+#
+# 1. Add the dependencies with one `flutter pub add` call, so each one gets the
+#    latest stable version that resolves. Never type a version by hand:
+#      flutter pub add flutter_bloc intl 'flutter_localizations:{"sdk":"flutter"}'
+dependencies:
+  - flutter_bloc
+  - intl
+  - flutter_localizations  # sdk: flutter
+#
+# 2. Under the existing top-level `flutter:` key, below
+#    `uses-material-design: true`, add:
+flutter:
+  generate: true
+#
+# 3. Below that, add this fonts placeholder as a comment. Uncomment it only when
+#    the font files are in the project:
+#
+#  # fonts:
+#  #   - family: <Family>
+#  #     fonts:
+#  #       - asset: assets/fonts/<Family>-Regular.ttf
+#  #         weight: 400

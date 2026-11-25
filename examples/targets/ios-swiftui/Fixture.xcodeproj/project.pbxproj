@@ -1,0 +1,86 @@
+// !$*UTF8*$!
+{
+    archiveVersion = 1;
+    classes = {};
+    objectVersion = 77;
+    objects = {
+        AAAAAAAAAAAAAAAAAAAAAA01 = {
+            isa = PBXProject;
+            buildConfigurationList = AAAAAAAAAAAAAAAAAAAAAA06;
+            mainGroup = AAAAAAAAAAAAAAAAAAAAAA02;
+            productRefGroup = AAAAAAAAAAAAAAAAAAAAAA03;
+            targets = (AAAAAAAAAAAAAAAAAAAAAA04);
+            developmentRegion = en;
+            knownRegions = (en, ar, Base);
+        };
+        AAAAAAAAAAAAAAAAAAAAAA02 = {
+            isa = PBXGroup;
+            children = (AAAAAAAAAAAAAAAAAAAAAA05, AAAAAAAAAAAAAAAAAAAAAA03);
+            sourceTree = "<group>";
+        };
+        AAAAAAAAAAAAAAAAAAAAAA03 = {
+            isa = PBXGroup;
+            children = (AAAAAAAAAAAAAAAAAAAAAA08);
+            name = Products;
+            sourceTree = "<group>";
+        };
+        AAAAAAAAAAAAAAAAAAAAAA04 = {
+            isa = PBXNativeTarget;
+            buildConfigurationList = AAAAAAAAAAAAAAAAAAAAAA07;
+            buildPhases = (AAAAAAAAAAAAAAAAAAAAAA09, AAAAAAAAAAAAAAAAAAAAAA12);
+            fileSystemSynchronizedGroups = (AAAAAAAAAAAAAAAAAAAAAA05);
+            name = Fixture;
+            productName = Fixture;
+            productReference = AAAAAAAAAAAAAAAAAAAAAA08;
+            productType = "com.apple.product-type.application";
+        };
+        AAAAAAAAAAAAAAAAAAAAAA05 = {
+            isa = PBXFileSystemSynchronizedRootGroup;
+            path = Fixture;
+            sourceTree = "<group>";
+        };
+        AAAAAAAAAAAAAAAAAAAAAA06 = {
+            isa = XCConfigurationList;
+            buildConfigurations = (AAAAAAAAAAAAAAAAAAAAAA10);
+            defaultConfigurationName = Debug;
+        };
+        AAAAAAAAAAAAAAAAAAAAAA07 = {
+            isa = XCConfigurationList;
+            buildConfigurations = (AAAAAAAAAAAAAAAAAAAAAA11);
+            defaultConfigurationName = Debug;
+        };
+        AAAAAAAAAAAAAAAAAAAAAA08 = {
+            isa = PBXFileReference;
+            explicitFileType = wrapper.application;
+            path = Fixture.app;
+            sourceTree = BUILT_PRODUCTS_DIR;
+        };
+        AAAAAAAAAAAAAAAAAAAAAA09 = {
+            isa = PBXSourcesBuildPhase;
+            files = ();
+        };
+        AAAAAAAAAAAAAAAAAAAAAA10 = {
+            isa = XCBuildConfiguration;
+            name = Debug;
+            buildSettings = { SDKROOT = iphoneos; };
+        };
+        AAAAAAAAAAAAAAAAAAAAAA11 = {
+            isa = XCBuildConfiguration;
+            name = Debug;
+            buildSettings = {
+                GENERATE_INFOPLIST_FILE = YES;
+                IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+                PRODUCT_BUNDLE_IDENTIFIER = dev.sauces.swiftfixture;
+                PRODUCT_NAME = "$(TARGET_NAME)";
+                SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+                SWIFT_VERSION = 5.0;
+                TARGETED_DEVICE_FAMILY = "1,2";
+            };
+        };
+        AAAAAAAAAAAAAAAAAAAAAA12 = {
+            isa = PBXResourcesBuildPhase;
+            files = ();
+        };
+    };
+    rootObject = AAAAAAAAAAAAAAAAAAAAAA01;
+}

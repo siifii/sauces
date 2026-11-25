@@ -1,0 +1,290 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Sauces manifest (.sauces/manifest.json)",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "figma",
+              "image",
+              "pdf",
+              "svg"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unreadable"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ref",
+          "kind",
+          "status"
+        ]
+      }
+    },
+    "screens": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "states": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string",
+                  "enum": [
+                    "default",
+                    "loading",
+                    "empty",
+                    "error",
+                    "dark",
+                    "other"
+                  ]
+                },
+                "reference": {
+                  "type": "string",
+                  "pattern": "^\\.sauces/references/.+\\.png$"
+                },
+                "source": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "layout": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "reference",
+                "source"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "states"
+        ]
+      }
+    },
+    "tokens": {
+      "type": "object",
+      "properties": {
+        "colors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "hex": {
+                "type": "string",
+                "pattern": "^#[0-9A-Fa-f]{6}$"
+              },
+              "name": {
+                "type": "string"
+              },
+              "coverage": {
+                "type": "number"
+              },
+              "origin": {
+                "type": "string",
+                "enum": [
+                  "figma",
+                  "extracted"
+                ]
+              }
+            },
+            "required": [
+              "hex",
+              "origin"
+            ]
+          }
+        },
+        "typography": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "size": {
+                "type": "number"
+              },
+              "weight": {
+                "type": "number"
+              },
+              "line_height": {
+                "type": "number"
+              },
+              "family": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "size",
+              "weight"
+            ]
+          }
+        },
+        "spacing": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "radii": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "colors",
+        "typography",
+        "spacing",
+        "radii"
+      ]
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "icon",
+              "illustration"
+            ]
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "kind",
+          "name"
+        ]
+      }
+    },
+    "design_system": {
+      "type": "object",
+      "properties": {
+        "signals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "figma-naming",
+                  "component-set",
+                  "variables",
+                  "library",
+                  "repetition"
+                ]
+              },
+              "detail": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "detail"
+            ]
+          }
+        },
+        "component_candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "occurrences": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "screens": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "variants": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "name",
+              "occurrences",
+              "screens",
+              "variants"
+            ]
+          }
+        }
+      },
+      "required": [
+        "signals",
+        "component_candidates"
+      ]
+    }
+  },
+  "required": [
+    "version",
+    "sources",
+    "screens",
+    "tokens",
+    "assets"
+  ],
+  "additionalProperties": false
+}

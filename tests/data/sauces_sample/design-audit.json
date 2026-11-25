@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "about": "Measured design facts from design_audit.py. Each finding cites a guideline and carries the measured numbers; the plan turns them into design suggestions the user keeps or applies. Sizes are logical px. screen 'all' means manifest-wide (tokens or the whole design). also_in lists other places with the same finding as <screen>/<state> ('tokens' for token values). Sorted by severity, then category: accessibility, ux, states, localization, platform, consistency.",
+  "manifest": "tests/data/sauces_sample/manifest.json",
+  "grid": 4,
+  "summary": {
+    "high": 0,
+    "medium": 1,
+    "low": 1
+  },
+  "findings": [
+    {
+      "id": "audit-accessibility-1",
+      "category": "accessibility",
+      "severity": "medium",
+      "screen": "login",
+      "state": "default",
+      "region": "column > link \"Forgot password?\"",
+      "detail": "link \"Forgot password?\" has a touch target of height 20 px: under Material 48 dp and HIG 44 pt; passes WCAG 2.5.8 by its spacing exception.",
+      "measured": {
+        "kind": "link",
+        "variant": "text",
+        "text": "Forgot password?",
+        "height": 20,
+        "width": null,
+        "measured_from": "height",
+        "too_small": [
+          "height"
+        ],
+        "minimum": 48,
+        "wcag_spacing": "passes"
+      },
+      "guideline": "Material 3 accessibility: touch targets at least 48 x 48 dp; Apple HIG: at least 44 x 44 pt. WCAG 2.2 SC 2.5.8 Target Size (Minimum), level AA: 24 x 24 CSS px, unless a 24 px circle centered on each undersized target does not intersect another target or its circle (spacing exception), or the target is an inline link in a sentence, among other exceptions",
+      "also_in": [
+        "login/error",
+        "login/loading"
+      ]
+    },
+    {
+      "id": "audit-consistency-1",
+      "category": "consistency",
+      "severity": "low",
+      "screen": "all",
+      "detail": "Colors #3D5AFE and #3E5BFE differ by delta E 0.73; they read as one color.",
+      "measured": {
+        "color_a": "#3D5AFE",
+        "color_b": "#3E5BFE",
+        "delta_e": 0.73,
+        "threshold": 3.0,
+        "uses_a": 3,
+        "uses_b": 3
+      },
+      "guideline": "Common design-token practice: colors within CIE76 delta E 3 are hard to tell apart and usually mean one intended color; Material 3 assigns each purpose one color role"
+    }
+  ]
+}

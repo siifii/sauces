@@ -1,9 +1,9 @@
 {
-  "name": "sauces-dev",
+  "name": "sauces",
   "owner": {
     "name": "Kareem Alsaifi (SiliconSage)"
   },
-  "description": "Local development marketplace for the Sauces plugin.",
+  "description": "Marketplace for the Sauces plugin: design sources to mobile UI that fits your project.",
   "plugins": [
     {
       "name": "sauces",

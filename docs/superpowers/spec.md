@@ -14,7 +14,7 @@ Sauces is a mobile-first, repo-aware design-implementation agent. It differs fro
 4. **Checks itself.** Renders previews or screenshot tests, diffs them against the design and iterates.
 5. **Report.** A component graph, reuse stats, a design audit (inconsistencies, missing states) and best practices.
 
-Sauces uses the official Figma MCP server when a Figma link is given. It does not reimplement Figma parsing.
+Sauces uses a Figma MCP server when a Figma link is given and the user has connected one. The plugin does not bundle or enable an MCP server; connecting Figma is the user's choice. It does not reimplement Figma parsing.
 
 ## 3. Users and entry points
 
@@ -102,7 +102,7 @@ Suggest adding `.sauces/verify/` to `.gitignore`.
 - **Skills:** cook, ingest, scan-project, plan, build, verify, report
 - **Agents:** `design-analyst` (image → structured layout spec), `component-builder` (one component, one platform), `fidelity-checker` (explains diffs, proposes fixes)
 - **Scripts:** `extract_palette.py`, `visual_diff.py`, `rasterize_pdf.py`, `report_render.py` (fills the HTML template from JSON)
-- **MCP:** Figma (official, HTTP)
+- **MCP:** none bundled. Figma (official, HTTP) is optional and added by the user.
 - **Platform references:** `android-compose.md`, `ios-swiftui.md`, `kmp-cmp.md`, `flutter.md`, shared by build/verify/scan
 
 ## 7. Non-goals for v0.1

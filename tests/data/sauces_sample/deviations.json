@@ -1,0 +1,9 @@
+[
+  {
+    "suggestion_id": "sug-1",
+    "screen": "login",
+    "state": "default",
+    "region": "column > link \"Forgot password?\"",
+    "note": "Hit area extended to 48 dp (lib/core/widgets/link_button.dart); text position unchanged"
+  }
+]

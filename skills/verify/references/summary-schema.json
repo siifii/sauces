@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Sauces verify summary (.sauces/verify/summary.json)",
+  "type": "object",
+  "properties": {
+    "version": {"type": "integer", "enum": [1]},
+    "platform": {"type": "string", "enum": ["flutter", "android-compose", "ios-swiftui", "kmp-cmp", "react-native"]},
+    "threshold": {"type": "number", "minimum": 0, "maximum": 100},
+    "threshold_source": {"type": "string", "enum": ["default", "config"], "description": "default = 90; config = .sauces/config.json fidelity_threshold."},
+    "renderer": {"type": "string", "description": "How screens were rendered, e.g. 'flutter test (test/sauces/)' or 'manual checklist'."},
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*--[a-z0-9][a-z0-9_-]*$", "description": "<screen>--<state>"},
+          "screen": {"type": "string"},
+          "state": {"type": "string"},
+          "reference": {"type": "string"},
+          "rendered": {"type": "boolean"},
+          "score": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+          "passed": {"type": "boolean"},
+          "iterations": {"type": "integer", "minimum": 0, "maximum": 3},
+          "scores": {"type": "array", "items": {"type": "number", "minimum": 0, "maximum": 100}, "description": "Score of each iteration, in order."},
+          "rtl_issues": {"type": "array", "items": {"type": "string"}},
+          "deviations": {"type": "array", "items": {"type": "string"}, "description": "suggestion_ids from .sauces/deviations.json for this screen state."},
+          "remaining": {"type": "array", "items": {"type": "string"}, "description": "Differences left as they are, each with its reason."},
+          "nondeterministic": {"type": "boolean", "description": "True when two renders of the same code scored more than 0.5 apart (R4)."}
+        },
+        "required": ["id", "screen", "state", "reference", "rendered", "score", "passed", "iterations", "scores", "rtl_issues", "deviations", "remaining"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["version", "platform", "threshold", "renderer", "results"],
+  "additionalProperties": false
+}

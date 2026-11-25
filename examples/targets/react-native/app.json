@@ -1,0 +1,9 @@
+{
+  "expo": {
+    "name": "Sauces Fixture",
+    "slug": "sauces-fixture",
+    "scheme": "sauces-fixture",
+    "android": {"package": "dev.sauces.rnfixture"},
+    "ios": {"bundleIdentifier": "dev.sauces.rnfixture"}
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "@@locale": "en",
+  "appTitle": "Fixture App",
+  "@appTitle": { "description": "Application title" },
+  "homeTitle": "Home",
+  "@homeTitle": { "description": "App bar title of the home page" },
+  "homeGreeting": "Hello! You have greeted {count, plural, =0{nobody yet} =1{1 time} other{{count} times}}.",
+  "@homeGreeting": {
+    "description": "Greeting card text with the number of greetings",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "homeGreetButton": "Say hello",
+  "@homeGreetButton": { "description": "Button that increments the greeting count" },
+  "homeResetButton": "Reset",
+  "@homeResetButton": { "description": "Button that resets the greeting count" },
+  "homeNameLabel": "Your name",
+  "@homeNameLabel": { "description": "Label of the name text field" }
+}

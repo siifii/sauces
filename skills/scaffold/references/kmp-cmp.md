@@ -1,0 +1,6 @@
+# Scaffold Compose Multiplatform
+
+1. In the target root, run `python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/scaffold_native.py" kmp-cmp --name "<display name>" --org "<reverse.domain>"`. This creates the bundled, versioned starter inside the selected destination and refuses to overwrite an existing path. Use the official IDE template only if the user requested a different template. If an IDE handoff is necessary, give the exact destination and resume only after the template exists.
+2. Preserve the generated target, dependency and toolchain configuration. Place themed Home and its seedable state in commonMain under the chosen structure. Wire the shared App to Home and keep the generated Android and iOS hosts.
+3. Put English strings in commonMain/composeResources/values and include the chosen locale qualifiers. Use generated resource accessors and directional layouts. Add a fixture-based smoke test if the template has a compatible runner.
+4. Discover Gradle tasks and assemble the Android app. On macOS build the iOS simulator host with its actual Xcode scheme. Run the configured tests for the available targets. Record individual check results and add a Sauces scaffold README section with structure, locales and build commands.

@@ -1,0 +1,17 @@
+[
+  {
+    "file": "lib/features/login/cubit/login_cubit.dart",
+    "line": 21,
+    "text": "call your auth repository with state.email and state.password, then emit LoginStatus.success or LoginStatus.failure."
+  },
+  {
+    "file": "lib/features/login/cubit/login_cubit.dart",
+    "line": 30,
+    "text": "navigate to your password reset flow."
+  },
+  {
+    "file": "lib/l10n/app_ar.arb",
+    "line": 12,
+    "text": "translate 5 new strings"
+  }
+]

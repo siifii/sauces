@@ -1,0 +1,99 @@
+@font-face { font-family: "Inter"; font-weight: 400; src: url("fonts/Inter-Regular.ttf") format("truetype"); }
+@font-face { font-family: "Inter"; font-weight: 500; src: url("fonts/Inter-Medium.ttf") format("truetype"); }
+@font-face { font-family: "Inter"; font-weight: 600; src: url("fonts/Inter-SemiBold.ttf") format("truetype"); }
+
+:root {
+  --brand: #3D5AFE;
+  --surface: #FFFFFF;
+  --text: #1B1B1F;
+  --text-variant: #49454F;
+  --outline: #79747E;
+  --error: #B3261E;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 390px;
+  height: 844px;
+  overflow: hidden;
+  background: var(--surface);
+  font-family: "Inter", sans-serif;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+.screen { padding: 96px 24px 0; }
+
+h1 { font-weight: 600; font-size: 28px; line-height: 36px; margin-bottom: 32px; }
+
+.field {
+  position: relative;
+  height: 56px;
+  margin-bottom: 16px;
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+.field .label {
+  position: absolute;
+  top: -9px; /* 16px label box centered on the 1px top border */
+  left: 12px;
+  padding: 0 4px;
+  background: var(--surface);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-variant);
+}
+.field .eye {
+  position: absolute;
+  right: 12px;
+  top: 15px; /* (56 - 2 border - 24) / 2 */
+  width: 24px;
+  height: 24px;
+  color: var(--text-variant);
+}
+.field .eye svg { display: block; width: 24px; height: 24px; }
+.field.password { margin-bottom: 8px; }
+
+/* error state: 2px border (1px border + 1px inset ring), no layout shift */
+.field.has-error { border-color: var(--error); box-shadow: inset 0 0 0 1px var(--error); }
+.field.has-error .label { color: var(--error); }
+.error-text {
+  margin: -4px 0 8px; /* field margin 8px - 4px = 4px below the field; 8px to the link row */
+  padding-left: 16px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--error);
+}
+
+.forgot {
+  display: block;
+  text-align: right;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--brand);
+  margin-bottom: 24px;
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 52px;
+  border-radius: 12px;
+  background: var(--brand);
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 24px;
+}
+.spinner { display: block; width: 24px; height: 24px; }
