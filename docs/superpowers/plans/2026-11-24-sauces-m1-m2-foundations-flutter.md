@@ -242,7 +242,8 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
 - Rules live in a dict, `RULES[platform] -> list[(rule_id, regex)]`, so later plans can add platforms. Flutter rules:
   - `hardcoded-color`: `Color\(0x`, `Color\.fromARGB`, `Color\.fromRGBO`, `\bColors\.(?!transparent\b)`
   - `hardcoded-string`: a non-empty string literal as the first positional argument of `Text(` or `SelectableText(`, or as the value of `hintText:`, `labelText:`, `helperText:`, `errorText:`, `tooltip:` or `semanticsLabel:`
-- Lines containing `// sauces-lint-ignore` are skipped. Files matching `--allow` globs are skipped; by default those are `**/theme/**`, `**/*_strings.dart`, `**/l10n/**` and `**/*.g.dart`.
+- Lines containing `// sauces-lint-ignore` are skipped.
+- (Added in Task 13) `--allow-colors GLOB` skips only the `hardcoded-color` rule for matching files (project token/theme files); string rules still apply. Files matching `--allow` globs are skipped; by default those are `**/theme/**`, `**/*_strings.dart`, `**/l10n/**` and `**/*.g.dart`.
 
 - [ ] **Step 1: Write failing tests:**
   - `test_flags_hex_color`
