@@ -76,7 +76,7 @@ Copy it unchanged to `.sauces/assets/<name>.svg`, where `<name>` is the file ste
 Read `${CLAUDE_PLUGIN_ROOT}/skills/ingest/references/figma.md` and follow it. Find the Figma tools by name suffix (`get_design_context`, `get_screenshot`, `get_variable_defs`, `get_metadata`) under any server prefix. If none is available, record the source as:
 
 ```json
-{"ref": "<url>", "kind": "figma", "status": "unreadable", "reason": "No Figma MCP connected. Connect the Figma connector or the plugin's figma server."}
+{"ref": "<url>", "kind": "figma", "status": "unreadable", "reason": "No Figma MCP connected. Add one with `claude mcp add --transport http figma https://mcp.figma.com/mcp` or connect the claude.ai Figma connector, then run again."}
 ```
 
 Then continue with the other sources and repeat the message in the summary.

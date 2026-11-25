@@ -1,6 +1,6 @@
 # Reading Figma sources
 
-Figma data arrives only through a Figma MCP server the user connected: the plugin's own `figma` server (`.mcp.json`, `https://mcp.figma.com/mcp`) or a claude.ai Figma connector. Sauces never calls the Figma REST API itself and never asks for a token.
+Figma data arrives only through a Figma MCP server the user chose to connect: the official server they added themselves (`claude mcp add --transport http figma https://mcp.figma.com/mcp`) or a claude.ai Figma connector. The plugin does not bundle or enable one. Sauces never calls the Figma REST API itself, never asks for a token, and never adds an MCP server on the user's behalf.
 
 ## 1. Find the tools
 
@@ -11,12 +11,12 @@ Look through your available tools (including deferred ones you can load by name)
 - `get_variable_defs`: the variables (colors, spacing, type) used by a node
 - `get_metadata`: the node tree (ids, names, sizes) of a page or frame
 
-Match the suffix under any server prefix, for example `mcp__figma__get_design_context`, `mcp__plugin_sauces_figma__get_design_context` or `mcp__claude_ai_Figma__get_design_context`. If several servers offer them, prefer the one the user named, else the first that works. If a server's tool list also has `create_session` (current official Figma server), call it first with the fileKey and a one-line task description, and pass the returned id as `sessionId` where tools accept it. If its instructions name a skill to load before `get_design_context`, load it.
+Match the suffix under any server prefix, for example `mcp__figma__get_design_context` or `mcp__claude_ai_Figma__get_design_context`. If several servers offer them, prefer the one the user named, else the first that works. If a server's tool list also has `create_session` (current official Figma server), call it first with the fileKey and a one-line task description, and pass the returned id as `sessionId` where tools accept it. If its instructions name a skill to load before `get_design_context`, load it.
 
 If none of the four tools exists, record the source and move on:
 
 ```json
-{"ref": "<url>", "kind": "figma", "status": "unreadable", "reason": "No Figma MCP connected. Connect the Figma connector or the plugin's figma server."}
+{"ref": "<url>", "kind": "figma", "status": "unreadable", "reason": "No Figma MCP connected. Add one with `claude mcp add --transport http figma https://mcp.figma.com/mcp` or connect the claude.ai Figma connector, then run again."}
 ```
 
 Use that `reason` exactly. If the tools exist but every call fails (auth error, no access, file not found), use `status: unreadable` with `reason` = `"Figma MCP error: <message>"`.

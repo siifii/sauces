@@ -68,7 +68,6 @@ All working state lives in `.sauces/` in your project. Consider adding `.sauces/
 ## Layout
 ```
 .claude-plugin/   plugin.json, marketplace.json (local dev)
-.mcp.json         Figma MCP server
 skills/           cook, ingest, scan-project, scaffold, plan, build, verify, report
 agents/           design-analyst, component-builder, fidelity-checker
 scripts/          Python 3 helpers (Pillow + numpy), including eval.py
@@ -83,7 +82,7 @@ docs/superpowers/ spec and build plans
 - Xcode on macOS with an installed iOS simulator for SwiftUI
 - The applicable Android and iOS toolchains for each Compose Multiplatform host you want to build or render
 - `pdftoppm` (poppler) for PDF inputs: `brew install poppler` / `apt install poppler-utils`
-- A Figma MCP server for Figma links: the plugin's own (`.mcp.json`) or a connected claude.ai Figma connector. Without one, Figma links are reported as unreadable, never skipped silently.
+- Optional, only for Figma links: a Figma MCP server you connect yourself. The plugin doesn't bundle or enable one. Add the official server with `claude mcp add --transport http figma https://mcp.figma.com/mcp`, or connect the claude.ai Figma connector. Without one, Figma links are reported as unreadable, never skipped silently, and screenshots, PDFs and SVGs work as usual.
 
 ## Development
 ```bash

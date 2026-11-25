@@ -12,7 +12,6 @@ This repo IS the plugin. There's no app code here. The deliverables are markdown
 
 ```
 .claude-plugin/plugin.json     manifest (name: sauces)
-.mcp.json                      Figma MCP server (https://mcp.figma.com/mcp)
 skills/<skill>/SKILL.md        one folder per skill, details in references/
 agents/<agent>.md              subagents (frontmatter: name, description w/ <example>, model, color, tools)
 scripts/                       Python 3 helpers (Pillow, numpy only, no heavy deps)

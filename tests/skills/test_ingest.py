@@ -8,7 +8,7 @@ from conftest import REPO, fixture_copy, needs_claude, needs_pdftoppm, run_scrip
 SCHEMA = REPO / "skills" / "ingest" / "references" / "manifest-schema.json"
 LOGIN = REPO / "examples" / "designs" / "login"
 FIGMA_URL = "https://www.figma.com/design/AbCdEf123/Login?node-id=1-2"
-FIGMA_REASON = "No Figma MCP connected. Connect the Figma connector or the plugin's figma server."
+FIGMA_REASON = "No Figma MCP connected. Add one with `claude mcp add --transport http figma https://mcp.figma.com/mcp` or connect the claude.ai Figma connector, then run again."
 
 pytestmark = [pytest.mark.skill, needs_claude]
 
