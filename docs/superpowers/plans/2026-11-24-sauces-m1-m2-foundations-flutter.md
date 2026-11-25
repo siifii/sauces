@@ -477,13 +477,13 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
 
 **Interfaces:**
 - Consumes: `visual_diff.py`, the manifest references, `generated_files`, plan `dependency_changes` (golden tooling is plain `flutter_test`, so no new dependency is needed for Flutter).
-- Produces: `.sauces/verify/<screen>--<state>/iter-<n>/{rendered.png,diff.png,score.json}`, `.sauces/verify/<screen>--<state>/rtl.png`, and `.sauces/verify/summary.json` `{version, results:[{id, score, passed, iterations, rendered: true|false, rtl_issues:[string]}]}`.
+- Produces: `.sauces/verify/<screen>--<state>/iter-<n>/{rendered.png,diff.png,score.json}`, `.sauces/verify/<screen>--<state>/rtl.png`, and `.sauces/verify/summary.json` `{version, platform, threshold, renderer, results:[{id, screen, state, reference, rendered: true|false, score, passed, iterations, scores[], rtl_issues:[string], deviations:[suggestion_id], remaining:[string]}]}`, validated by `skills/verify/references/summary-schema.json`.
 - `flutter.md` (verify):
-  - Write `test/sauces/<screen>_golden_test.dart`.
+  - Write `test/sauces/<screen>_render_test.dart`. *(Changed 2026-11-25: a capture-only test, not `matchesGoldenFile`. Committed goldens break on other machines' font rasterization and after every UI change; the capture test writes PNGs only with `--dart-define=SAUCES_RENDER_DIR=<dir>` and is otherwise a smoke test that fails only on exceptions/overflows. It also sets `debugShowCheckedModeBanner: false`, `debugDisableShadows = false`, and uses fixed pumps because spinners never settle.)*
   - Load the bundled fonts with `FontLoader` before pumping, since goldens otherwise use Ahem.
   - Set `tester.view.physicalSize = Size(780,1688)` and `devicePixelRatio = 2`.
   - Pump each state by giving the Cubit a seeded state.
-  - Run `flutter test --update-goldens test/sauces/`.
+  - Run `flutter test --dart-define="SAUCES_RENDER_DIR=$PWD/.sauces/verify/_render" test/sauces/`.
   - The RTL pass pumps with `locale: Locale('ar')`. Check for overflow errors in the test output and compare the mirrored layout, recording any issues as `rtl_issues`.
 - Intentional deviations: read `.sauces/deviations.json`; list them beside the score in `summary.json` (`deviations: [suggestion_id]`) and never "fix" them back.
 - Loop: when a score is below the threshold, the fidelity-checker proposes fixes, the build rules apply them, and the screen is re-rendered, for at most 3 iterations. Then record and move on. If the render fails entirely, write `rendered: false` and a manual checklist to `.sauces/verify/checklist.md`, and say so.
@@ -523,7 +523,7 @@ Every file has `"version": 1`. Paths inside `.sauces/` files are relative to the
 ### Task 16: scaffold skill (Flutter create mode)
 
 **Files:**
-- Create: `skills/scaffold/SKILL.md`, `skills/scaffold/references/flutter.md`, `skills/scaffold/assets/flutter/**` (an overlay: `lib/app.dart`, `lib/core/theme/app_theme.dart`, `lib/core/theme/app_colors.dart`, `lib/l10n/app_en.arb`, `lib/l10n/app_ar.arb`, `l10n.yaml`, `pubspec.additions.yaml`, `test/sauces/README.md`), `tests/skills/test_scaffold.py`
+- Create: `skills/scaffold/SKILL.md`, `skills/scaffold/references/flutter.md`, `skills/scaffold/assets/flutter/**` (an overlay: `lib/app.dart`, `lib/core/theme/app_theme.dart`, `lib/core/theme/app_colors.dart`, `lib/l10n/app_en.arb`, `lib/l10n/app_ar.arb`, `l10n.yaml`, `pubspec.additions.yaml`, `test/sauces/README.md`; also `lib/main.dart`, `lib/l10n/l10n.dart`, a starter `lib/features/home/view/home_page.dart`, `test/helpers/pump_app.dart` and `test/app_test.dart`, which replaces the counter `widget_test.dart` that `flutter create` writes and that fails once `main.dart` changes), `tests/skills/test_scaffold.py`
 
 **Interfaces:**
 - Consumes: profile `mode == "empty"`.

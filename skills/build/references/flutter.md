@@ -244,6 +244,7 @@ Every pattern needs the same contract as the Cubit: **each design state can be s
   Nothing else: a helper widget the screen needs but the plan didn't list goes into the screen's file as a private class, or is raised in the summary.
 - Feature folders follow `conventions.feature_folders` (the fixture: `lib/features/<f>/{cubit,view}`).
 - Never write outside the project root or into `build/`, `.dart_tool/` or the platform host folders.
+- **A project Sauces scaffolded** (its `root` is in `state.json` `generated_files`, and `lib/app.dart` has `home: const HomePage()` from the starter): point `home:` at the first `screen` item you build, and in `test/app_test.dart` replace `HomePage` (and its import) with that screen in both tests, providing whatever the screen needs the way its own screen test does. Leave the starter `home_page.dart` and its `homePlaceholder` strings in place, and mention in the summary that they can be deleted.
 
 ## Don't
 

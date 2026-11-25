@@ -1,0 +1,7 @@
+{
+  "@@locale": "en",
+  "appTitle": "{{app_title}}",
+  "@appTitle": { "description": "Application title" },
+  "homePlaceholder": "Your screens will appear here.",
+  "@homePlaceholder": { "description": "Body of the starter home page, shown until the first designed screen replaces it" }
+}
