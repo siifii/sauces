@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "score": 91.2,
+  "pixel_similarity": 1.0,
+  "ssim": 1.0,
+  "threshold": 90.0,
+  "passed": true,
+  "size": [
+    78,
+    169
+  ]
+}

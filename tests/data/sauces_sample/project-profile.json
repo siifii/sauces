@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "mode": "existing",
+  "projects": [
+    {
+      "root": ".",
+      "platform": "flutter",
+      "architecture": "feature-first",
+      "state_management": "bloc",
+      "theme": {
+        "location": "lib/core/theme/app_theme.dart",
+        "tokens_source": "lib/core/theme/app_colors.dart"
+      },
+      "localization": {
+        "system": "arb",
+        "rtl": true,
+        "locales": [
+          "en",
+          "ar"
+        ],
+        "location": "lib/l10n"
+      },
+      "components": [
+        {
+          "name": "AppButton",
+          "path": "lib/core/widgets/app_button.dart",
+          "params": [
+            "label",
+            "onPressed"
+          ],
+          "has_preview": false
+        },
+        {
+          "name": "AppTextField",
+          "path": "lib/core/widgets/app_text_field.dart",
+          "params": [
+            "label",
+            "controller",
+            "obscure"
+          ],
+          "has_preview": false
+        },
+        {
+          "name": "AppCard",
+          "path": "lib/core/widgets/app_card.dart",
+          "params": [
+            "child"
+          ],
+          "has_preview": false
+        }
+      ],
+      "conventions": {
+        "feature_folders": "lib/features/<f>/{cubit,view}",
+        "naming": "snake_case files, App* shared widgets"
+      },
+      "screenshot_tooling": {
+        "present": false
+      },
+      "findings": [
+        {
+          "id": "theme-seeded-surface",
+          "area": "theme",
+          "detail": "ColorScheme.fromSeed tints the surface; the design uses pure white",
+          "paths": [
+            "lib/core/theme/app_theme.dart"
+          ]
+        },
+        {
+          "id": "previews-none",
+          "area": "previews",
+          "detail": "No widget previews or golden tests",
+          "paths": []
+        }
+      ],
+      "component_structure": {
+        "pattern": "feature-first",
+        "paths": [
+          "lib/core/widgets",
+          "lib/features"
+        ],
+        "evidence": [
+          "shared widgets in lib/core/widgets",
+          "features in lib/features/<f>"
+        ]
+      }
+    }
+  ]
+}

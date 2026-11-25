@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}}</title>
+<style>
+  :root {
+    --bg: #f6f7fb; --card: #ffffff; --ink: #1b1b1f; --muted: #5f6170; --line: #e3e5ee;
+    --accent: #3d5afe; --accent-soft: #e8ecff;
+    --ok: #1b7f4b; --ok-soft: #e3f5ea; --warn: #9a6700; --warn-soft: #fff4d6;
+    --bad: #b3261e; --bad-soft: #fde8e6; --info: #3d5afe; --info-soft: #e8ecff;
+    --radius: 14px; --shadow: 0 1px 2px rgba(20, 22, 40, .06), 0 4px 16px rgba(20, 22, 40, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111218; --card: #1a1c24; --ink: #ececf1; --muted: #a2a5b5; --line: #2c2f3b;
+      --accent: #8c9eff; --accent-soft: #232a4d;
+      --ok: #6fd39b; --ok-soft: #173326; --warn: #f2c14e; --warn-soft: #3a2f12;
+      --bad: #ff8a80; --bad-soft: #3d1d1b; --info: #8c9eff; --info-soft: #232a4d;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  header.hero {
+    background: linear-gradient(135deg, #1f2a6b 0%, #3d5afe 60%, #6f86ff 100%); color: #fff;
+    padding: 48px 24px 52px;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  header.hero .wrap { padding: 0; max-width: 1072px; }
+  .eyebrow { text-transform: uppercase; letter-spacing: .12em; font-size: 12px; opacity: .8; margin: 0 0 8px; }
+  header.hero h1 { font-size: 34px; line-height: 1.2; margin: 0 0 8px; font-weight: 700; }
+  header.hero p.sub { margin: 0; opacity: .9; }
+  nav.toc {
+    position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+  }
+  nav.toc .wrap { display: flex; gap: 4px; overflow-x: auto; padding-top: 8px; padding-bottom: 8px; }
+  nav.toc a {
+    color: var(--muted); text-decoration: none; font-size: 13px; padding: 6px 10px; border-radius: 999px; white-space: nowrap;
+  }
+  nav.toc a:hover { background: var(--accent-soft); color: var(--accent); }
+  main.wrap { margin-top: 28px; padding-bottom: 64px; }
+  section {
+    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--line);
+    padding: 28px; margin: 0 0 24px; scroll-margin-top: 64px;
+  }
+  section > h2 { margin: 0 0 4px; font-size: 21px; }
+  section > p.lead { margin: 0 0 20px; color: var(--muted); }
+  h3 { font-size: 16px; margin: 24px 0 10px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 0 0 20px; }
+  .card { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--card); }
+  .card .num { font-size: 28px; font-weight: 700; line-height: 1.1; }
+  .card .label { color: var(--muted); font-size: 13px; }
+  .card.accent { background: var(--accent-soft); border-color: transparent; }
+  .card.accent .num { color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: start; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  tr:last-child td { border-bottom: 0; }
+  code { font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--bg); padding: 1px 5px; border-radius: 5px; }
+  pre { font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--bg); padding: 14px; border-radius: 10px; overflow: auto; }
+  .badge {
+    display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
+    background: var(--bg); color: var(--muted); white-space: nowrap;
+  }
+  .b-reuse, .b-pass, .b-apply { background: var(--ok-soft); color: var(--ok); }
+  .b-extend, .b-medium { background: var(--warn-soft); color: var(--warn); }
+  .b-new, .b-token, .b-info, .b-low { background: var(--info-soft); color: var(--info); }
+  .b-fail, .b-high { background: var(--bad-soft); color: var(--bad); }
+  .b-keep { background: var(--bg); color: var(--muted); }
+  .muted { color: var(--muted); }
+  .empty { color: var(--muted); font-style: italic; margin: 0; }
+  .callout { border-inline-start: 4px solid var(--warn); background: var(--warn-soft); padding: 10px 14px; border-radius: 8px; margin: 12px 0; }
+  .callout.bad { border-color: var(--bad); background: var(--bad-soft); }
+  .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+  .shot { border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .shot header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+  .shot header strong { font-size: 15px; }
+  .score { font-size: 26px; font-weight: 700; }
+  .score.pass { color: var(--ok); } .score.fail { color: var(--bad); }
+  .triptych { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .triptych figure { margin: 0; }
+  .triptych img { width: 100%; border-radius: 6px; border: 1px solid var(--line); display: block; background: #fff; }
+  .triptych figcaption { font-size: 11px; color: var(--muted); text-align: center; margin-top: 4px; }
+  .shot ul { margin: 10px 0 0; padding-inline-start: 18px; font-size: 13px; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+  .swatch { display: flex; align-items: center; gap: 8px; font-size: 13px; border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px 6px 6px; }
+  .chip { width: 28px; height: 28px; border-radius: 7px; border: 1px solid rgba(0, 0, 0, .12); flex: none; }
+  .pair { display: inline-flex; gap: 4px; vertical-align: middle; margin-inline-end: 6px; }
+  .pair .chip { width: 18px; height: 18px; border-radius: 5px; }
+  .graph { overflow: auto; text-align: center; }
+  details summary { cursor: pointer; color: var(--muted); font-size: 13px; margin-top: 12px; }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+  ul.clean { list-style: none; padding: 0; margin: 0; }
+  ul.clean li { padding: 7px 0; border-bottom: 1px solid var(--line); }
+  ul.clean li:last-child { border-bottom: 0; }
+  footer { text-align: center; color: var(--muted); font-size: 13px; padding: 8px 0 40px; }
+  @media print { nav.toc { display: none; } section { break-inside: avoid; box-shadow: none; } }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Sauces report</p>
+    <h1>{{heading}}</h1>
+    <p class="sub">{{subheading}}</p>
+  </div>
+</header>
+<nav class="toc"><div class="wrap">
+  <a href="#summary">Summary</a><a href="#fidelity">Fidelity</a><a href="#design-system">Design system</a>
+  <a href="#graph">Component graph</a><a href="#localization">Localization</a><a href="#audit">Design audit</a>
+  <a href="#todos">TODOs</a><a href="#practices">Best practices</a><a href="#recommendations">Recommendations</a>
+</div></nav>
+<main class="wrap">
+  <section id="summary">
+    <h2>Summary</h2>
+    <p class="lead">What was built, how much of the existing code was reused, and how close it is to the design.</p>
+    {{summary}}
+  </section>
+  <section id="fidelity">
+    <h2>Visual fidelity</h2>
+    <p class="lead">Each screen state rendered with the project's own tooling and scored 0–100 against its design reference (pixel similarity + SSIM).</p>
+    {{fidelity}}
+  </section>
+  <section id="design-system">
+    <h2>Design system</h2>
+    <p class="lead">Where new components live, and how each design element maps to code.</p>
+    {{design_system}}
+  </section>
+  <section id="graph">
+    <h2>Component graph</h2>
+    <p class="lead">Screens → components → tokens.</p>
+    {{graph}}
+  </section>
+  <section id="localization">
+    <h2>Localization &amp; resources</h2>
+    <p class="lead">Strings, locales, right-to-left checks and assets.</p>
+    {{localization}}
+  </section>
+  <section id="audit">
+    <h2>Design audit</h2>
+    <p class="lead">Measured facts about the design itself, and the suggestions you kept or applied.</p>
+    {{audit}}
+  </section>
+  <section id="todos">
+    <h2>TODOs for a human</h2>
+    <p class="lead">Behavior the design doesn't show. Sauces marked it instead of guessing.</p>
+    {{todos}}
+  </section>
+  <section id="practices">
+    <h2>Best practices &amp; next steps</h2>
+    <p class="lead">What the generated code follows, and what to do next.</p>
+    {{practices}}
+  </section>
+  <section id="recommendations">
+    <h2>Recommendations</h2>
+    <p class="lead">Changes to the existing project that Sauces offered at the plan step, and what you chose.</p>
+    {{recommendations}}
+  </section>
+</main>
+<footer>{{footer}}</footer>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  if (window.mermaid) {
+    mermaid.initialize({ startOnLoad: true, theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' });
+  }
+</script>
+</body>
+</html>

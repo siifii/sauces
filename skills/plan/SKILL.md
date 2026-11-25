@@ -51,7 +51,7 @@ List every distinct user-facing text in the design as one `strings[]` entry `{ke
 - `value` is the exact text as shown (`Forgot password?`, keep punctuation and case). Error, empty and loading copy from every state counts.
 - Exclude sample content: nodes with `placeholder: true` and field values such as `alex@example.com` or masked passwords, unless the design shows them as hint text the user sees in an empty field.
 - Keys are camelCase: feature, then meaning (`loginTitle`, `loginEmailLabel`, `loginSignInButton`, `loginErrorInvalidCredentials`).
-- When the source-locale file already has the same text, reuse that key and mark it "existing" in `plan.md`.
+- When the source-locale file already has the same text, reuse that key, set `"existing": true` on the entry (new keys leave it out), and mark it "existing" in `plan.md`.
 - Where the strings go depends on `localization.system`, per `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/recommendations.md` (strings rule). The plan only lists them; build writes them.
 
 ## 5. Recommendations

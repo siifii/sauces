@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "platform": "flutter",
+  "threshold": 90,
+  "renderer": "flutter test (test/sauces/login_render_test.dart)",
+  "results": [
+    {
+      "id": "login--default",
+      "screen": "login",
+      "state": "default",
+      "reference": ".sauces/references/login--default.png",
+      "rendered": true,
+      "score": 93.1,
+      "passed": true,
+      "iterations": 2,
+      "scores": [
+        88.4,
+        93.1
+      ],
+      "rtl_issues": [
+        "Forgot password? stays right-aligned in RTL (Alignment.centerRight in login_page.dart)"
+      ],
+      "deviations": [
+        "sug-1"
+      ],
+      "remaining": [
+        "Field values are placeholder content",
+        "Surface is the kept seeded theme tint, not #FFFFFF (rec-1 kept)"
+      ]
+    },
+    {
+      "id": "login--error",
+      "screen": "login",
+      "state": "error",
+      "reference": ".sauces/references/login--error.png",
+      "rendered": true,
+      "score": 91.2,
+      "passed": true,
+      "iterations": 1,
+      "scores": [
+        91.2
+      ],
+      "rtl_issues": [],
+      "deviations": [],
+      "remaining": [
+        "Field values are placeholder content",
+        "Surface is the kept seeded theme tint, not #FFFFFF (rec-1 kept)"
+      ]
+    },
+    {
+      "id": "login--loading",
+      "screen": "login",
+      "state": "loading",
+      "reference": ".sauces/references/login--loading.png",
+      "rendered": true,
+      "score": 92.6,
+      "passed": true,
+      "iterations": 1,
+      "scores": [
+        92.6
+      ],
+      "rtl_issues": [],
+      "deviations": [],
+      "remaining": [
+        "Field values are placeholder content",
+        "Surface is the kept seeded theme tint, not #FFFFFF (rec-1 kept)"
+      ]
+    }
+  ]
+}

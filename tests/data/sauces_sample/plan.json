@@ -1,0 +1,205 @@
+{
+  "version": 1,
+  "approved": true,
+  "approved_by": "user",
+  "platform": "flutter",
+  "items": [
+    {
+      "id": "item-1",
+      "design_ref": "tokens#brand",
+      "decision": "token",
+      "name": "brand",
+      "path": "lib/core/theme/app_colors.dart",
+      "level": "token",
+      "layer": "core-theme",
+      "confidence": 0.9
+    },
+    {
+      "id": "item-2",
+      "design_ref": "login/default#password-field",
+      "decision": "extend",
+      "name": "AppTextField",
+      "path": "lib/core/widgets/app_text_field.dart",
+      "existing_path": "lib/core/widgets/app_text_field.dart",
+      "level": "atom",
+      "layer": "core-widgets",
+      "confidence": 0.85,
+      "notes": "add errorText (default null)"
+    },
+    {
+      "id": "item-3",
+      "design_ref": "login/default#email-field",
+      "decision": "reuse",
+      "name": "AppTextField",
+      "path": "lib/core/widgets/app_text_field.dart",
+      "existing_path": "lib/core/widgets/app_text_field.dart",
+      "level": "atom",
+      "layer": "core-widgets",
+      "confidence": 0.9
+    },
+    {
+      "id": "item-4",
+      "design_ref": "login/default#button",
+      "decision": "extend",
+      "name": "AppButton",
+      "path": "lib/core/widgets/app_button.dart",
+      "existing_path": "lib/core/widgets/app_button.dart",
+      "level": "atom",
+      "layer": "core-widgets",
+      "confidence": 0.85,
+      "notes": "add loading (default false)"
+    },
+    {
+      "id": "item-5",
+      "design_ref": "login/default#forgot-link",
+      "decision": "new",
+      "name": "LinkButton",
+      "path": "lib/core/widgets/link_button.dart",
+      "level": "atom",
+      "layer": "core-widgets",
+      "confidence": 0.7
+    },
+    {
+      "id": "item-6",
+      "design_ref": "login/default#screen",
+      "decision": "new",
+      "name": "LoginPage",
+      "path": "lib/features/login/view/login_page.dart",
+      "level": "screen",
+      "layer": "feature-view",
+      "confidence": 0.9,
+      "notes": "states: default, error, loading"
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "rec-1",
+      "finding_id": "theme-seeded-surface",
+      "title": "Use a white surface",
+      "why": "The design's surface is #FFFFFF; the seeded scheme tints it.",
+      "options": [
+        {
+          "id": "keep",
+          "label": "Keep the seeded surface"
+        },
+        {
+          "id": "white",
+          "label": "Override surface to #FFFFFF",
+          "changes": [
+            "ColorScheme.fromSeed(..., surface: white)"
+          ],
+          "files": [
+            "lib/core/theme/app_theme.dart"
+          ]
+        }
+      ],
+      "choice": "keep"
+    },
+    {
+      "id": "rec-2",
+      "finding_id": "previews-none",
+      "title": "Add widget previews",
+      "why": "Components have no previews to review them in isolation.",
+      "options": [
+        {
+          "id": "keep",
+          "label": "No previews"
+        },
+        {
+          "id": "previews",
+          "label": "Add a preview per new component",
+          "changes": [
+            "@Preview functions"
+          ],
+          "files": []
+        }
+      ],
+      "choice": "previews"
+    }
+  ],
+  "strings": [
+    {
+      "key": "loginTitle",
+      "value": "Welcome back",
+      "screen": "login"
+    },
+    {
+      "key": "emailLabel",
+      "value": "Email",
+      "screen": "login",
+      "existing": true
+    },
+    {
+      "key": "loginPasswordLabel",
+      "value": "Password",
+      "screen": "login"
+    },
+    {
+      "key": "loginForgotPassword",
+      "value": "Forgot password?",
+      "screen": "login"
+    },
+    {
+      "key": "loginSignIn",
+      "value": "Sign in",
+      "screen": "login"
+    },
+    {
+      "key": "loginErrorInvalidCredentials",
+      "value": "Incorrect email or password",
+      "screen": "login"
+    }
+  ],
+  "dependency_changes": [],
+  "structure": {
+    "recommended": "follow",
+    "choice": "follow",
+    "reasons": [
+      "The project already separates shared widgets (lib/core/widgets) from features."
+    ],
+    "options": [
+      {
+        "id": "follow",
+        "label": "Follow the project (feature-first)",
+        "folders": [
+          "lib/core/widgets",
+          "lib/features/<f>/view"
+        ]
+      },
+      {
+        "id": "atomic",
+        "label": "Atomic design",
+        "folders": [
+          "lib/design_system/atoms",
+          "lib/design_system/molecules"
+        ]
+      }
+    ]
+  },
+  "design_suggestions": [
+    {
+      "id": "sug-1",
+      "category": "accessibility",
+      "severity": "medium",
+      "title": "Grow the Forgot password? hit area to 48 dp",
+      "evidence": "login/default: link is 20 px high",
+      "change": "Pad the link to a 48 dp hit area without moving the text",
+      "why": "Small tap targets are hard to hit",
+      "guideline": "Material 3: touch targets at least 48x48 dp",
+      "choice": "apply",
+      "audit_id": "audit-accessibility-1"
+    },
+    {
+      "id": "sug-2",
+      "category": "consistency",
+      "severity": "low",
+      "title": "Merge #3E5BFE into the brand color",
+      "evidence": "#3E5BFE vs #3D5AFE (ΔE < 3)",
+      "change": "Use the brand token for the button fill",
+      "why": "Near-duplicate colors drift apart over time",
+      "guideline": "Use one token per role",
+      "choice": "keep",
+      "audit_id": "audit-consistency-1"
+    }
+  ]
+}

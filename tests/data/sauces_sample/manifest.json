@@ -1,0 +1,566 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "ref": "design/login--default.png",
+      "kind": "image",
+      "status": "ok"
+    },
+    {
+      "ref": "design/login--error.png",
+      "kind": "image",
+      "status": "ok"
+    },
+    {
+      "ref": "design/login--loading.png",
+      "kind": "image",
+      "status": "ok"
+    },
+    {
+      "ref": "https://www.figma.com/design/abc123/Login?node-id=1-2",
+      "kind": "figma",
+      "status": "unreadable",
+      "reason": "No Figma MCP server connected"
+    }
+  ],
+  "screens": [
+    {
+      "id": "login",
+      "name": "Login",
+      "states": [
+        {
+          "id": "default",
+          "name": "default",
+          "reference": ".sauces/references/login--default.png",
+          "source": 0,
+          "layout": {
+            "type": "column",
+            "confidence": 0.9,
+            "assumed_dpr": 2,
+            "size": [
+              390,
+              844
+            ],
+            "style": {
+              "background": "#FFFFFF",
+              "padding": [
+                96,
+                24,
+                0,
+                24
+              ],
+              "gap": 16
+            },
+            "children": [
+              {
+                "type": "text",
+                "text": "Welcome back",
+                "confidence": 0.95,
+                "style": {
+                  "color": "#1B1B1F",
+                  "size": 28,
+                  "weight": 600
+                }
+              },
+              {
+                "type": "component",
+                "component": {
+                  "kind": "text-field",
+                  "variant": "outlined"
+                },
+                "text": "Email",
+                "confidence": 0.9,
+                "style": {
+                  "height": 56,
+                  "width": "fill",
+                  "radius": 12,
+                  "border": {
+                    "width": 1,
+                    "color": "#79747E"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "text": "Email",
+                    "confidence": 0.95,
+                    "style": {
+                      "color": "#49454F",
+                      "size": 12,
+                      "weight": 400,
+                      "background": "#FFFFFF"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "component",
+                "component": {
+                  "kind": "text-field",
+                  "variant": "outlined"
+                },
+                "text": "Password",
+                "confidence": 0.9,
+                "style": {
+                  "height": 56,
+                  "width": "fill",
+                  "radius": 12,
+                  "border": {
+                    "width": 1,
+                    "color": "#79747E"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "text": "Password",
+                    "confidence": 0.95,
+                    "style": {
+                      "color": "#49454F",
+                      "size": 12,
+                      "weight": 400,
+                      "background": "#FFFFFF"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "component",
+                "component": {
+                  "kind": "link",
+                  "variant": "text"
+                },
+                "text": "Forgot password?",
+                "confidence": 0.9,
+                "style": {
+                  "height": 20,
+                  "color": "#3D5AFE",
+                  "size": 14,
+                  "weight": 500
+                }
+              },
+              {
+                "type": "component",
+                "component": {
+                  "kind": "button",
+                  "variant": "filled"
+                },
+                "text": "Sign in",
+                "confidence": 0.9,
+                "style": {
+                  "height": 52,
+                  "width": "fill",
+                  "radius": 12,
+                  "background": "#3E5BFE",
+                  "color": "#FFFFFF",
+                  "size": 16,
+                  "weight": 600
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "error",
+          "name": "error",
+          "reference": ".sauces/references/login--error.png",
+          "source": 1,
+          "layout": {
+            "type": "column",
+            "confidence": 0.9,
+            "assumed_dpr": 2,
+            "size": [
+              390,
+              844
+            ],
+            "style": {
+              "background": "#FFFFFF",
+              "padding": [
+                96,
+                24,
+                0,
+                24
+              ],
+              "gap": 16
+            },
+            "children": [
+              {
+                "type": "text",
+                "text": "Welcome back",
+                "confidence": 0.95,
+                "style": {
+                  "color": "#1B1B1F",
+                  "size": 28,
+                  "weight": 600
+                }
+              },
+              {
+                "type": "component",
+                "component": {
+                  "kind": "text-field",
+                  "variant": "outlined"
+                },
+                "text": "Email",
+                "confidence": 0.9,
+                "style": {
+                  "height": 56,
+                  "width": "fill",
+                  "radius": 12,
+                  "border": {
+                    "width": 1,
+                    "color": "#79747E"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "text": "Email",
+                    "confidence": 0.95,
+                    "style": {
+                      "color": "#49454F",
+                      "size": 12,
+                      "weight": 400,
+                      "background": "#FFFFFF"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "component",
+                "component": {
+                  "kind": "text-field",
+                  "variant": "outlined"
+                },
+                "text": "Password",
+                "confidence": 0.9,
+                "style": {
+                  "height": 56,
+                  "width": "fill",
+                  "radius": 12,
+                  "border": {
+                    "width": 1,
+                    "color": "#79747E"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "text": "Password",
+                    "confidence": 0.95,
+                    "style": {
+                      "color": "#49454F",
+                      "size": 12,
+                      "weight": 400,
+                      "background": "#FFFFFF"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "text": "Incorrect email or password",
+                "confidence": 0.95,
+                "style": {
+                  "color": "#B3261E",
+                  "size": 12,
+                  "weight": 400
+                }
+              },
+              {
+                "type": "component",
+                "component": {
+                  "kind": "link",
+                  "variant": "text"
+                },
+                "text": "Forgot password?",
+                "confidence": 0.9,
+                "style": {
+                  "height": 20,
+                  "color": "#3D5AFE",
+                  "size": 14,
+                  "weight": 500
+                }
+              },
+              {
+                "type": "component",
+                "component": {
+                  "kind": "button",
+                  "variant": "filled"
+                },
+                "text": "Sign in",
+                "confidence": 0.9,
+                "style": {
+                  "height": 52,
+                  "width": "fill",
+                  "radius": 12,
+                  "background": "#3E5BFE",
+                  "color": "#FFFFFF",
+                  "size": 16,
+                  "weight": 600
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "loading",
+          "name": "loading",
+          "reference": ".sauces/references/login--loading.png",
+          "source": 2,
+          "layout": {
+            "type": "column",
+            "confidence": 0.9,
+            "assumed_dpr": 2,
+            "size": [
+              390,
+              844
+            ],
+            "style": {
+              "background": "#FFFFFF",
+              "padding": [
+                96,
+                24,
+                0,
+                24
+              ],
+              "gap": 16
+            },
+            "children": [
+              {
+                "type": "text",
+                "text": "Welcome back",
+                "confidence": 0.95,
+                "style": {
+                  "color": "#1B1B1F",
+                  "size": 28,
+                  "weight": 600
+                }
+              },
+              {
+                "type": "component",
+                "component": {
+                  "kind": "text-field",
+                  "variant": "outlined"
+                },
+                "text": "Email",
+                "confidence": 0.9,
+                "style": {
+                  "height": 56,
+                  "width": "fill",
+                  "radius": 12,
+                  "border": {
+                    "width": 1,
+                    "color": "#79747E"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "text": "Email",
+                    "confidence": 0.95,
+                    "style": {
+                      "color": "#49454F",
+                      "size": 12,
+                      "weight": 400,
+                      "background": "#FFFFFF"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "component",
+                "component": {
+                  "kind": "text-field",
+                  "variant": "outlined"
+                },
+                "text": "Password",
+                "confidence": 0.9,
+                "style": {
+                  "height": 56,
+                  "width": "fill",
+                  "radius": 12,
+                  "border": {
+                    "width": 1,
+                    "color": "#79747E"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "text": "Password",
+                    "confidence": 0.95,
+                    "style": {
+                      "color": "#49454F",
+                      "size": 12,
+                      "weight": 400,
+                      "background": "#FFFFFF"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "component",
+                "component": {
+                  "kind": "link",
+                  "variant": "text"
+                },
+                "text": "Forgot password?",
+                "confidence": 0.9,
+                "style": {
+                  "height": 20,
+                  "color": "#3D5AFE",
+                  "size": 14,
+                  "weight": 500
+                }
+              },
+              {
+                "type": "component",
+                "component": {
+                  "kind": "button",
+                  "variant": "filled"
+                },
+                "text": "Sign in",
+                "confidence": 0.9,
+                "style": {
+                  "height": 52,
+                  "width": "fill",
+                  "radius": 12,
+                  "background": "#3E5BFE",
+                  "color": "#FFFFFF",
+                  "size": 16,
+                  "weight": 600
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "tokens": {
+    "colors": [
+      {
+        "hex": "#3D5AFE",
+        "name": "brand",
+        "coverage": 0.06,
+        "origin": "extracted"
+      },
+      {
+        "hex": "#3E5BFE",
+        "coverage": 0.01,
+        "origin": "extracted"
+      },
+      {
+        "hex": "#FFFFFF",
+        "name": "surface",
+        "coverage": 0.85,
+        "origin": "extracted"
+      },
+      {
+        "hex": "#1B1B1F",
+        "name": "text",
+        "coverage": 0.03,
+        "origin": "extracted"
+      },
+      {
+        "hex": "#49454F",
+        "name": "label",
+        "coverage": 0.01,
+        "origin": "extracted"
+      },
+      {
+        "hex": "#79747E",
+        "name": "outline",
+        "coverage": 0.02,
+        "origin": "extracted"
+      },
+      {
+        "hex": "#B3261E",
+        "name": "error",
+        "coverage": 0.01,
+        "origin": "extracted"
+      }
+    ],
+    "typography": [
+      {
+        "name": "title",
+        "size": 28,
+        "weight": 600,
+        "line_height": 36,
+        "family": "Inter"
+      },
+      {
+        "name": "body",
+        "size": 16,
+        "weight": 400,
+        "line_height": 24,
+        "family": "Inter"
+      },
+      {
+        "name": "label",
+        "size": 12,
+        "weight": 400,
+        "line_height": 16,
+        "family": "Inter"
+      },
+      {
+        "name": "link",
+        "size": 14,
+        "weight": 500,
+        "line_height": 20,
+        "family": "Inter"
+      }
+    ],
+    "spacing": [
+      4,
+      8,
+      16,
+      24,
+      32,
+      96
+    ],
+    "radii": [
+      12
+    ]
+  },
+  "assets": [
+    {
+      "path": ".sauces/assets/eye.svg",
+      "kind": "icon",
+      "name": "eye"
+    }
+  ],
+  "design_system": {
+    "signals": [
+      {
+        "kind": "repetition",
+        "detail": "Two outlined text fields with the same style",
+        "evidence": "login/default"
+      }
+    ],
+    "component_candidates": [
+      {
+        "name": "TextField",
+        "occurrences": 2,
+        "screens": [
+          "login"
+        ],
+        "variants": [
+          "default",
+          "error"
+        ]
+      },
+      {
+        "name": "Button",
+        "occurrences": 1,
+        "screens": [
+          "login"
+        ],
+        "variants": [
+          "default",
+          "loading"
+        ]
+      }
+    ]
+  }
+}

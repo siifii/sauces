@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "stages": {
+    "ingest": {
+      "status": "done",
+      "finished_at": "2026-11-25T09:00:00Z",
+      "inputs_hash": "abc"
+    },
+    "scan": {
+      "status": "done",
+      "finished_at": "2026-11-25T09:00:00Z",
+      "inputs_hash": null
+    },
+    "plan": {
+      "status": "done",
+      "finished_at": "2026-11-25T09:00:00Z",
+      "inputs_hash": null
+    },
+    "build": {
+      "status": "done",
+      "finished_at": "2026-11-25T09:00:00Z",
+      "inputs_hash": null
+    },
+    "verify": {
+      "status": "done",
+      "finished_at": "2026-11-25T09:00:00Z",
+      "inputs_hash": null
+    },
+    "report": {
+      "status": "pending",
+      "finished_at": null,
+      "inputs_hash": null
+    }
+  },
+  "generated_files": [
+    "lib/core/widgets/link_button.dart",
+    "lib/features/login/view/login_page.dart",
+    "lib/features/login/cubit/login_cubit.dart",
+    "lib/features/login/cubit/login_state.dart",
+    "test/sauces/login_render_test.dart"
+  ],
+  "changed_files": [
+    "lib/core/widgets/app_button.dart",
+    "lib/core/widgets/app_text_field.dart",
+    "lib/l10n/app_en.arb",
+    "lib/l10n/app_ar.arb"
+  ]
+}
