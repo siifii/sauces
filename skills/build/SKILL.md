@@ -5,7 +5,7 @@ description: This skill should be used when the user asks to "build the approved
 
 # Build
 
-Turn the approved `.sauces/plan.json` into code in the user's project. The result must be code the project's developers would merge without rewriting: their structure, their names, their state management, their theme and their localization.
+Turn the approved `.sauces/plan.json` into code the project's developers would merge without rewriting: their structure, names, state management, theme and localization.
 
 ## Hard rules
 
@@ -35,7 +35,6 @@ From `plan.json` collect:
 - Chosen recommendations: every `recommendations[]` entry with `choice` ≠ `keep`, with the option's `changes` and `files`. Apply each exactly as listed, in the build-order step it belongs to (theme and token changes first). `finding_id`s such as `design-theme-*` or `strings-localization` have no scan finding behind them; that is expected.
 - Applied design suggestions: every `design_suggestions[]` entry with `choice: "apply"`. Its `change` replaces what the design shows for the affected element (section 4).
 - `dependency_changes`: add each package with the platform's tool (Flutter: `flutter pub add <package>:<version>`, `dev:<package>` for `scope: "dev"`) before writing code that uses it.
-- `strings`: the keys and values to add.
 
 ## 3. Build in order
 
@@ -51,13 +50,13 @@ Build items in this order: tokens → assets → atoms → molecules → organis
 
 Before creating a file at a `new` path, check that it does not exist. If it exists and is listed in `.sauces/state.json` `generated_files`, it is from an earlier build: update it in place. If it exists and is not listed, it is the user's: do not touch it; ask the user how to proceed (in eval mode skip the item and report it).
 
-Notes on items carry the details that matter: expected fidelity differences from kept theme roles (leave them; verify reports them), icon substitutions, the `TODO(sauces)` behavior to leave. Read them before writing each item.
+Read each item's `notes` first: kept-theme fidelity differences (leave them; verify reports them), icon substitutions, the `TODO(sauces)` behavior to leave.
 
-**Inline or delegated.** Build items inline by default: one agent that sees the whole plan keeps names and imports consistent, and a dispatch costs a fresh context per item. Delegate an item to the `component-builder` agent only when the plan has more than about eight `new`/`extend` items or the user asks for it. Then dispatch one agent per item, sequentially in build order (later items import earlier ones), passing the item, the relevant profile fields, the platform reference path and the files earlier items created. Each agent returns the files it created or changed and its TODOs; collect them for steps 6 and 7.
+**Inline or delegated.** Build inline by default: one agent seeing the whole plan keeps names and imports consistent, and each dispatch costs a fresh context. Delegate an item to the `component-builder` agent only when the plan has more than about eight `new`/`extend` items or the user asks for it. Then dispatch one agent per item, sequentially in build order (later items import earlier ones), passing the item, the relevant profile fields, the platform reference path and the files earlier items created. Each agent returns the files it created or changed, the string keys it used and its TODOs; collect them for steps 4, 6 and 7. Agents never edit string resources: this skill owns every ARB/strings edit (step 4.1), so add the keys an agent reports before running the checks.
 
 ## 4. Strings, resources and applied suggestions
 
-1. Add every `strings[]` entry, plus keys for accessibility labels and tooltips the screen needs (for example show/hide password), where the reference's Strings section says (Flutter with ARB: every ARB file; the source locale gets the value and a description, every other locale the source value with `"@key": {"description": "TODO(sauces): translate"}`). Keep existing entries and formatting untouched. Use placeholders and plurals in the platform format for text that varies.
+1. You own every string edit (component-builder agents only report keys). Add every `strings[]` entry, plus keys for accessibility labels and tooltips (show/hide password), with the project's own mechanism, per the reference's Strings section (ARB: every locale; non-source locales get the source value and a `TODO(sauces): translate` description). Keep existing entries and formatting. Text that varies uses placeholders and plurals.
 2. Regenerate localizations and fix every error (Flutter: `flutter gen-l10n` when `l10n.yaml` exists or `generate: true` is set).
 3. Add assets per the reference's Assets section (declared in the manifest file, resolution variants, no unapproved packages).
 4. For each applied design suggestion, build the `change` as written (for example extend a hit area, raise a text size, add a missing state). Add any string or token it needs the same way as above. Then append to `.sauces/deviations.json` one entry per affected screen state:
@@ -75,14 +74,16 @@ Run these from the project root and fix every problem, then run them again until
 1. Lint every Dart file you created or changed, tests included:
 
    ```bash
-   python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/lint_generated.py" --platform flutter <files...>
+   python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/lint_generated.py" --platform flutter \
+     --allow "<theme.tokens_source>" --allow "<chosen pattern's tokens folder>/**" <files...>
    ```
 
-   Exit 0 is clean. Exit 1 prints JSON findings (`file`, `line`, `rule`, `text`): move each color to a theme token and each string to l10n. In an existing file you changed, fix only findings on lines you wrote; a finding on a line that was already there (check `git diff -U0`) is the user's code: leave it and list it in the summary (a recommendation covers it). Exit 2 is a usage error (a missing file): fix the paths.
+   Run it from the project root with relative paths. The files are everything you created or changed: your list, plus any path `git status --porcelain` shows now that was not in the step 1.5 list. The `--allow` globs exempt the project's token files (the token source from the profile, and for `atomic`/`layered` the `tokens` folder; the `theme/`, `l10n/` and `*_strings.dart` defaults already apply); leave out an `--allow` that does not apply. Exit 0 is clean. Exit 1 prints JSON findings (`file`, `line`, `rule`, `text`): move each color to a token and each string to the localization system. In an existing file you changed, fix only findings on lines you wrote; a finding on a line that was already there (`git diff -U0`; files dirty before step 1.5 are the user's work in progress) is the user's code: leave it and list it in the summary. Without git, lint new files whole and, in changed files, only the lines of the symbols the plan told you to add. Exit 2 is a usage error (a missing file): fix the paths.
 2. `flutter gen-l10n` again if you touched ARB files since step 4.
 3. `dart format` the files you created (not the existing files you extended; see the reference's Extend rules).
 4. `flutter analyze --no-fatal-infos`: fix every error and warning in files you touched. Report pre-existing issues in other files without fixing them.
-5. `flutter test`: every test passes, the project's existing tests included. A failing existing test means your change broke behavior: fix your code, not the test.
+5. Extend self-check: `git diff` each file you extended. Only added lines plus the few lines the new parameter must touch (the constructor, the expression that uses it) may differ; anything else (reformatting, reordering, a changed default) means: restore the file (`git checkout -- <file>` when it was clean before step 1.5) and redo the extension.
+6. `flutter test`: every test passes, the project's existing tests included. A failing existing test means your change broke behavior: fix your code, not the test.
 
 If a tool is missing (`flutter` not on `PATH`), skip the steps that need it, say so plainly in the summary, and never claim the code was analyzed or tested.
 

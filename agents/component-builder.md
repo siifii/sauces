@@ -49,10 +49,11 @@ If any of these is missing, read it yourself from `.sauces/`. If the plan is not
    - `extend`: add exactly the parameter or variant `notes` names, optional, with a default that reproduces the old behavior. Touch only the lines it needs; never rename, remove or reformat. Append a test for the new behavior to the existing test file.
    - `new`: create `path` (it must not exist yet unless an earlier Sauces build created it), plus its test or preview per the reference.
    - `screen` level: the screen at `path`, its state next to it per the reference, every design state reachable by seeding the state, and a screen test.
-4. Colors and type from the theme, strings from the localization system (new keys in every locale, non-source locales get the source value and a `TODO(sauces): translate` description), directional layout, 48 dp touch targets, labels from l10n.
-5. Behavior the design does not show gets a `// TODO(sauces): …` comment, never a guess or fake.
-6. Never add a package the plan's `dependency_changes` does not list. Never touch files outside the item's scope; if the item needs a change elsewhere the plan does not describe, stop and report it instead.
-7. Lint what you wrote: `python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/lint_generated.py" --platform <platform> <files...>` must exit 0. For Flutter, run `flutter gen-l10n` after ARB edits and `flutter analyze --no-fatal-infos` on the project, and fix errors in your files.
+4. Colors and type from the project's tokens, directional layout, 48 dp touch targets, labels from the localization system.
+5. **Never edit string resources** (ARB files, a strings class, `.xcstrings`, `strings.xml`). The `build` skill owns every string edit. Use the keys the dispatch gives you (`strings[]`), in the project's accessor (`context.l10n.loginTitle`). When you need a key the plan does not have (an accessibility label, a tooltip), choose a camelCase key by feature and meaning, use it in code, and report it under `strings_needed` with its source value; build adds it to every locale before it runs the checks. Code that uses a key build has not added yet won't compile, so run `flutter analyze` only to check your other errors.
+6. Behavior the design does not show gets a `// TODO(sauces): …` comment, never a guess or fake.
+7. Never add a package the plan's `dependency_changes` does not list. Never touch files outside the item's scope; if the item needs a change elsewhere the plan does not describe, stop and report it instead.
+8. Lint what you wrote: `python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/lint_generated.py" --platform <platform> --allow "<theme.tokens_source>" <files...>` must exit 0, apart from findings on lines that were already in a file you extended. For Flutter, run `flutter analyze --no-fatal-infos` and fix errors in your files.
 
 ## Output
 
@@ -62,7 +63,8 @@ Reply with only this, so `build` can record it:
 item: <id>
 created: <path>, <path>
 changed: <path>, <path>
-strings_added: <key>, <key>
+strings_used: <key>, <key>
+strings_needed: <key> = "<source value>" (<where it appears>), ...
 todos:
 - <path>:<line>: <text>
 notes: <anything build must know: expected design differences, skipped work and why>

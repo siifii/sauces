@@ -96,6 +96,18 @@ def pipeline(tmp_path_factory):
     }
 
 
+def touched(workdir):
+    """(untracked, modified) paths from git status, outside .sauces/: what build really
+    wrote, whatever it recorded in state.json. The fixture copy starts clean."""
+    untracked, modified = set(), set()
+    for line in git(workdir, "status", "--porcelain", "--untracked-files=all").splitlines():
+        path = line[3:].strip('"')
+        if path.startswith(".sauces/"):
+            continue
+        (untracked if line.startswith("??") else modified).add(path)
+    return untracked, modified
+
+
 def added_lines(workdir, path):
     """1-based line numbers build added or changed in an existing file (git diff -U0)."""
     lines = set()
@@ -113,8 +125,11 @@ def test_build_lint_clean(pipeline):
     the user's code: build must not rewrite them, so they don't count here.
     """
     state, workdir = pipeline["state"], pipeline["workdir"]
-    generated = {f for f in state.get("generated_files", []) if f.endswith(".dart")}
-    changed = {f for f in state.get("changed_files", []) if f.endswith(".dart")} - generated
+    untracked, modified = touched(workdir)
+    generated = {f for f in set(state.get("generated_files", [])) | untracked
+                 if f.endswith(".dart")}
+    changed = {f for f in set(state.get("changed_files", [])) | modified
+               if f.endswith(".dart")} - generated
     assert generated | changed, state
     result = run_script("lint_generated.py", "--platform", "flutter",
                         *(str(workdir / f) for f in sorted(generated | changed)))
@@ -146,15 +161,30 @@ def test_arb_keys_in_all_locales(pipeline):
 
 
 def test_existing_components_not_replaced(pipeline):
+    """Extends are additive. Instead of a raw deletion count (3 was exactly what a clean
+    loading extension of AppButton needs, so any reformatting tipped it), every deleted
+    line must be one an additive parameter has to touch: the constructor signature, or a
+    named argument (`child: Text(label),`) whose name is written again in the new lines.
+    Old constructor parameters and public field declarations must all survive."""
     workdir = pipeline["workdir"]
     for path in WIDGETS:
         assert (workdir / path).is_file(), path
-        numstat = git(workdir, "diff", "--numstat", "HEAD", "--", path).split()
-        deletions = int(numstat[1]) if numstat else 0
-        assert deletions <= 3, (path, numstat, git(workdir, "diff", "HEAD", "--", path))
         cls = "AppButton" if path.endswith("app_button.dart") else "AppTextField"
-        old = ctor_params(git(workdir, "show", f"HEAD:{path}"), cls)
-        new = ctor_params((workdir / path).read_text(), cls)
+        diff = git(workdir, "diff", "-U0", "HEAD", "--", path)
+        removed = [l[1:] for l in diff.splitlines() if l.startswith("-") and not l.startswith("---")]
+        added = "\n".join(l[1:] for l in diff.splitlines()
+                          if l.startswith("+") and not l.startswith("+++"))
+        for line in removed:
+            arg = re.match(r"\s*(\w+):\s", line)
+            ok = (re.match(rf"\s*(?:const\s+)?{cls}\(", line)
+                  or (arg and re.search(rf"\b{arg.group(1)}:", added)))
+            assert ok, (path, line, diff)
+        old_src = git(workdir, "show", f"HEAD:{path}")
+        new_src = (workdir / path).read_text()
+        for field in re.findall(r"^\s*final\s+[^;=]+;", old_src, re.M):
+            assert field.strip() in new_src, (path, field)
+        old = ctor_params(old_src, cls)
+        new = ctor_params(new_src, cls)
         assert old <= new, (path, old - new)
 
 
@@ -171,10 +201,14 @@ def test_files_follow_structure(pipeline):
     items = {i["path"]: i for i in plan["items"]}
     screen_features = {m.group(1) for i in plan["items"] if i["level"] == "screen"
                        for m in [re.match(r"lib/features/([^/]+)/", i["path"])] if m}
+    screen_features |= {re.sub(r"(?<!^)(?=[A-Z])", "_", m.group(1)).lower()
+                        for i in plan["items"] if i["level"] == "screen"
+                        for m in [re.match(r"(\w+?)(Page|Screen|View)$", i["name"])] if m}
     for item in plan["items"]:
         if item["decision"] in ("new", "token"):
             assert (workdir / item["path"]).is_file(), item
-    generated = state.get("generated_files", [])
+    untracked, _ = touched(workdir)
+    generated = sorted(set(state.get("generated_files", [])) | untracked)
     assert generated, state
     for path in generated:
         assert (workdir / path).exists(), path
@@ -185,8 +219,11 @@ def test_files_follow_structure(pipeline):
             folder = layer_regex(pattern, item["layer"])
             assert re.match(rf"{folder}/", path), (path, item["layer"], pattern)
             continue
-        # Not a plan item: state management beside a planned screen, or l10n output.
-        allowed = [rf"lib/features/{re.escape(f)}/(cubit|bloc)/" for f in screen_features]
+        # Not a plan item (flutter.md Folders): state management beside a planned screen,
+        # the feature strings class when the project has no localization, or l10n files.
+        state_dirs = r"(cubit|bloc|providers|controllers|notifiers)"
+        allowed = [rf"lib/features/{re.escape(f)}/{state_dirs}/" for f in screen_features]
+        allowed += [rf"lib/(.+/)?{re.escape(f)}_strings\.dart$" for f in screen_features]
         allowed.append(r"lib/l10n/")
         assert any(re.match(a, path) for a in allowed), (path, sorted(items))
 

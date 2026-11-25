@@ -10,10 +10,13 @@ Code samples use the flutter-bloc fixture's names (`AppButton`, `AppTextField`, 
 - Type comes from `Theme.of(context).textTheme.<style>`. Read the theme once per `build` (`final textTheme = Theme.of(context).textTheme;`).
 - Map by meaning, not by hex: main button fill → `primary`, its label → `onPrimary`, body text → `onSurface`, secondary text and icons → `onSurfaceVariant`, field borders → `outline`, errors → `error`, page background → `surface`. The plan already chose the role for each design color; use the one in the item `notes`.
 - **Never change an existing theme value or role** (`ColorScheme.fromSeed` arguments, an existing `TextTheme` entry, an existing component theme, an existing `ThemeExtension` field's value) unless the plan has a `theme` recommendation (`rec-design-theme-*`) whose `choice` is not `keep`. With `keep`, reused components render in the project's existing roles and styles. That difference is expected; verify reports it. Never "fix" it with per-widget overrides on a reused component.
-- Additive tokens (`token` items) go where the project keeps tokens (`theme.tokens_source`):
+- Additive tokens (`token` items) go where the project keeps tokens (`theme.tokens_source`), in the mechanism it already uses:
+  - **A constants class** (`abstract final class AppColors { static const Color brand = Color(0xFF…); }`, `lib/core/constants/app_colors.dart`): add a `static const` in the same style and read it the way existing code does.
+  - **flex_color_scheme, a generated tokens file, or another token system**: add the token the way that system does (its config, its source file, then its generator if it has one). Never introduce a new `ThemeExtension` architecture (or any new token mechanism) into a project that doesn't use one; that is a `theme` recommendation.
+  - **A `ThemeExtension`** (the fixture's `AppColors`): as below.
   - A new color is a new field on the project's `ThemeExtension`: add the field, the constructor parameter, `copyWith`, and `lerp` (`Color.lerp(a, b, t)!`). Follow the existing fields' style (`required` like the others), and pass a value at every place the extension is constructed (grep for `AppColors(`: the light theme, the dark theme if any, tests). Those are theme files, so `lint_generated.py` allows the literal there. Existing fields and their values stay as they are.
-  - A new text style only new components use is a field on a `ThemeExtension` (for example a new `AppTextStyles` extension in the theme folder, registered in the theme's `extensions:` list) built from an existing `TextTheme` entry with `copyWith(...)`. Adding an extension to the `extensions:` list is additive; editing the existing entries is not.
-  - Literal values (`Color(0xFF3D5AFE)`, font sizes) are allowed only inside the theme folder.
+  - A new text style only new components use is a field on a `ThemeExtension` when the project already uses theme extensions (for example a new `AppTextStyles` extension in the theme folder, registered in the theme's `extensions:` list) built from an existing `TextTheme` entry with `copyWith(...)`. Adding an extension to the `extensions:` list is additive; editing the existing entries is not.
+  - Literal values (`Color(0xFF3D5AFE)`, font sizes) are allowed only in the project's token and theme files: the `theme/` folder, `theme.tokens_source`, and for the `atomic`/`layered` structures the `tokens` folder. The build skill passes those files to `lint_generated.py` as `--allow` globs; anywhere else a literal is a finding.
 - Design values a new component needs that the theme has no token for (sizes, gaps, radii): follow the project. If it writes them inline (`const SizedBox(height: 16)`, `BorderRadius.circular(12)`), write them inline in the same style. Don't invent a spacing system.
 - Fidelity notes for Material 3 (apply only in new code or through a chosen recommendation):
   - M3 text styles carry letter spacing (body `+0.5`, label `+0.1`) and fixed heights. A design drawn in a browser with `letter-spacing: 0` matches better with `letterSpacing: 0` and the design's line height (`height: lineHeight / fontSize`, for example 36/28). Put those values in the additive text style, never per widget.
@@ -84,8 +87,19 @@ Flutter has no stable, project-wide preview convention. Follow the project:
 - Text that varies uses ICU, never concatenation or interpolation in Dart:
   - placeholders: `"loginWelcomeUser": "Welcome back, {name}"` with `"@loginWelcomeUser": {"placeholders": {"name": {"type": "String"}}}`;
   - plurals: `"{count, plural, =0{No messages} =1{1 message} other{{count} messages}}"` with an `int` placeholder. Copy the plural forms the source locale needs into other locales; the translator adds the rest (Arabic has `zero`, `one`, `two`, `few`, `many`, `other`).
-- Regenerate after editing ARB files: `flutter gen-l10n` when `l10n.yaml` exists or `generate: true` is set (`flutter pub get` also regenerates with `generate: true`). Fix any error it prints before going on. The output folder (`output-dir`) is generated: never edit it by hand.
-- Without ARB (`localization.system: none`): one feature strings class, `lib/features/<f>/<f>_strings.dart`, `abstract final class LoginStrings { static const title = 'Welcome back'; ... }`, unless the user chose the `localize` recommendation.
+- Regenerate after editing ARB files: `flutter gen-l10n` when `l10n.yaml` exists or `generate: true` is set. Fix any error it prints before going on. The output folder (`output-dir`) is generated: never edit it by hand.
+- Keep the project's existing import path for the generated class. Recent Flutter versions deprecated the synthetic `package:flutter_gen/gen_l10n/...` package in favour of output inside the source tree (`output-dir`, for example `lib/l10n/gen/`). Don't migrate a project from one to the other; that is the user's decision. Whether `flutter pub get` still regenerates the localizations implicitly depends on the Flutter version and on `generate: true`, so run `flutter gen-l10n` explicitly. If it prints a deprecation warning, report it in the summary instead of acting on it.
+- **Other localization stacks** (`easy_localization` JSON/YAML, `slang`, `intl_utils`'s `flutter_intl`): follow the project's mechanism: add keys to the files it already uses, in every locale, call strings the way existing code does (`'login.title'.tr()`, `t.login.title`, `S.of(context).loginTitle`), and run its code generator if it has one (`dart run slang`, `flutter pub run intl_utils:generate`). Never add `flutter gen-l10n`/ARB alongside it. If you are unsure how the project's stack works, ask.
+- **Without localization** (`localization.system: none`, and the user did not choose the `localize` recommendation): one strings class per feature, `<feature>_strings.dart` (the lint allows that file name). Put it in the feature's folder per the profile and the chosen structure, beside the screen's folder (for example `lib/features/login/login_strings.dart`, or the screen's own folder in a layer-first project):
+
+  ```dart
+  abstract final class LoginStrings {
+    static const title = 'Welcome back';
+    static const showPassword = 'Show password';
+  }
+  ```
+
+  `abstract final class` needs Dart ≥ 3.0 (check `environment.sdk`). On older SDKs write `class LoginStrings { LoginStrings._(); static const title = ...; }`. Widgets, `Semantics` labels and tooltips read `LoginStrings.title`, and tests find text with `find.text(LoginStrings.title)`, never with a literal.
 
 ### RTL
 
@@ -127,7 +141,7 @@ Flutter has no stable, project-wide preview convention. Follow the project:
   const SizedBox(height: 4), // what is left of the 24 px gap
   ```
 
-  Trade-off: the ink splash is off-centre vertically (it fills the 48 dp box, the text sits near its top). `MaterialTapTargetSize.padded` alone would also give 48 dp, but it grows the layout box around the centred text and pushes everything below down by 14 px or more. When the gaps around the link add up to less than 28 px, there is no room: keep the visual row, use `padded`, and record the layout difference in the summary.
+  Trade-off: the ink splash is off-centre vertically (it fills the 48 dp box, the text sits near its top). `MaterialTapTargetSize.padded` alone would also give 48 dp, but it grows the layout box around the centred text and pushes everything below down (by 14 px for a 20 px row with the default visual density; a denser `visualDensity` in the theme changes that). When the gaps around the link add up to less than 28 px, there is no room: keep the visual row, use `padded`, and record the layout difference in the summary.
 - Text scales: never put text in a fixed-height container (`SizedBox(height: 20, child: Text(...))`) or set `textScaler`. Use `minimumSize`/`ConstrainedBox(minHeight:)` instead of fixed heights for controls with text. Screens scroll (`SingleChildScrollView` or a `ListView`) so 200% text and the keyboard don't overflow.
 - Errors are text, not only color: show the message (`errorText`) with the colored border.
 - Inputs: give fields the right `keyboardType`, `textInputAction` and `autofillHints` when the component supports them (or when the plan's `extend` item adds them). Don't extend a component for them beyond what the plan names: mention it in the summary instead.
@@ -186,16 +200,43 @@ Follow `state_management` from the profile. Put state next to the screen the way
 
 ### Other patterns
 
-- `riverpod`: a `Notifier`/`AsyncNotifier` (codegen with `@riverpod` only if the project uses `riverpod_generator`), a `ConsumerWidget` screen, overrides for seeded states in tests.
-- `provider`: a `ChangeNotifier` with private fields and getters, provided by the screen.
-- `setstate`: keep the state in the screen's `State` class.
+Every pattern needs the same contract as the Cubit: **each design state can be shown by seeding the state**, because tests and verify pump every state that way.
+
+- `riverpod` (Riverpod ≥ 2.0 for `Notifier`; checked against the 3.x changelog): a `Notifier` whose initial state can be injected, a `ConsumerWidget`/`ConsumerStatefulWidget` screen, and a seeded override in tests:
+
+  ```dart
+  class LoginNotifier extends Notifier<LoginState> {
+    LoginNotifier([this._initial = const LoginState()]);
+    final LoginState _initial;
+    @override
+    LoginState build() => _initial;
+    // emailChanged, submit (TODO(sauces)), ...
+  }
+
+  final loginProvider = NotifierProvider<LoginNotifier, LoginState>(LoginNotifier.new);
+
+  // test / golden:
+  ProviderScope(
+    overrides: [
+      loginProvider.overrideWith(
+        () => LoginNotifier(const LoginState(status: LoginStatus.failure)),
+      ),
+    ],
+    child: const LoginPage(),
+  )
+  ```
+
+  Version notes: `overrideWith(() => notifier)` on a `NotifierProvider` works in 2.x and 3.x. Riverpod 3.0 (2025-09-10) added `overrideWithBuild` (replaces only `build`) and `ProviderContainer.test()`, and moved `StateNotifierProvider`/`StateProvider` to the legacy import, so don't write new `StateNotifier` code. With `riverpod_generator` (`@riverpod class LoginNotifier extends _$LoginNotifier`) the generated provider is overridden the same way; use codegen only if the project already does. The provider is `autoDispose` when the project's feature providers are.
+- `provider`: a `ChangeNotifier` controller with private fields, getters and an optional initial state (`LoginController({LoginState initialState = const LoginState()})`). The page provides it (`ChangeNotifierProvider(create: (_) => LoginController(), child: const LoginView())`), and a public `LoginView` reads it with `context.watch<LoginController>()`. Tests seed it with `ChangeNotifierProvider(create: (_) => LoginController(initialState: ...), child: const LoginView())`.
+- `setstate`: keep the state in the screen's `State` class. For seeding, give the screen an optional `@visibleForTesting` initial-state parameter (`LoginPage({super.key, this.initialState = const LoginState()})`).
 - Anything else: follow the nearest existing feature; if there is none, ask.
 
 ## Folders
 
 - Every file goes where its plan item's `path` says. The path already follows the chosen structure (`plan.json` `structure.choice`) and the item's `layer` (`${CLAUDE_PLUGIN_ROOT}/skills/plan/references/design-system-patterns.md`). Never move or rename an existing file to fit a pattern.
 - Files the plan does not list as items:
-  - state management beside the screen: `lib/features/<f>/cubit/` (or `bloc/`, `providers/`, as the project does it), next to the screen's `view/` folder;
+  - state management beside the screen: `lib/features/<f>/cubit/` (or `bloc/`, `providers/`, `controllers/`, `notifiers/`, as the project does it), next to the screen's `view/` folder;
+  - the feature strings class `<feature>_strings.dart` when the project has no localization (Strings & RTL);
   - tests in `test/`, mirroring the `lib/` path;
   - assets in the project's asset folder; generated l10n in its output folder.
   Nothing else: a helper widget the screen needs but the plan didn't list goes into the screen's file as a private class, or is raised in the summary.
