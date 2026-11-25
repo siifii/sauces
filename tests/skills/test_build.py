@@ -61,10 +61,15 @@ def arb_keys(text):
 
 
 def ctor_params(source, cls):
-    """Named parameters of the unnamed constructor `cls({...})`: `this.x` and `super.x`."""
+    """Named parameters of the unnamed constructor `cls({...})` with their `required`
+    flag and default, normalized: {'required this.label', 'this.obscure = false', ...}."""
     match = re.search(rf"\b(?:const\s+)?{cls}\(\{{(.*?)\}}\)", source, re.S)
     assert match, (cls, source)
-    return set(re.findall(r"\b(?:this|super)\.(\w+)", match.group(1)))
+    params = set()
+    for m in re.finditer(r"((?:required\s+)?(?:this|super)\.\w+(?:\s*=\s*[^,}]+)?)",
+                         match.group(1)):
+        params.add(re.sub(r"\s+", " ", m.group(1)).strip())
+    return params
 
 
 def layer_regex(pattern, layer):
@@ -164,8 +169,9 @@ def test_existing_components_not_replaced(pipeline):
     """Extends are additive. Instead of a raw deletion count (3 was exactly what a clean
     loading extension of AppButton needs, so any reformatting tipped it), every deleted
     line must be one an additive parameter has to touch: the constructor signature, or a
-    named argument (`child: Text(label),`) whose name is written again in the new lines.
-    Old constructor parameters and public field declarations must all survive."""
+    named argument (`child: Text(label),`) whose old value is still in the added lines
+    (wrapped or branched on, not replaced). Old constructor parameters keep their
+    `required` flag and default, and public field declarations all survive."""
     workdir = pipeline["workdir"]
     for path in WIDGETS:
         assert (workdir / path).is_file(), path
@@ -175,9 +181,10 @@ def test_existing_components_not_replaced(pipeline):
         added = "\n".join(l[1:] for l in diff.splitlines()
                           if l.startswith("+") and not l.startswith("+++"))
         for line in removed:
-            arg = re.match(r"\s*(\w+):\s", line)
+            arg = re.match(r"\s*(\w+):\s*(.*?),?\s*$", line)
             ok = (re.match(rf"\s*(?:const\s+)?{cls}\(", line)
-                  or (arg and re.search(rf"\b{arg.group(1)}:", added)))
+                  or (arg and re.search(rf"\b{arg.group(1)}:", added)
+                      and arg.group(2) in added))
             assert ok, (path, line, diff)
         old_src = git(workdir, "show", f"HEAD:{path}")
         new_src = (workdir / path).read_text()

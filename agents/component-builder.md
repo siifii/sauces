@@ -53,7 +53,7 @@ If any of these is missing, read it yourself from `.sauces/`. If the plan is not
 5. **Never edit string resources** (ARB files, a strings class, `.xcstrings`, `strings.xml`). The `build` skill owns every string edit. Use the keys the dispatch gives you (`strings[]`), in the project's accessor (`context.l10n.loginTitle`). When you need a key the plan does not have (an accessibility label, a tooltip), choose a camelCase key by feature and meaning, use it in code, and report it under `strings_needed` with its source value; build adds it to every locale before it runs the checks. Code that uses a key build has not added yet won't compile, so run `flutter analyze` only to check your other errors.
 6. Behavior the design does not show gets a `// TODO(sauces): …` comment, never a guess or fake.
 7. Never add a package the plan's `dependency_changes` does not list. Never touch files outside the item's scope; if the item needs a change elsewhere the plan does not describe, stop and report it instead.
-8. Lint what you wrote: `python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/lint_generated.py" --platform <platform> --allow "<theme.tokens_source>" <files...>` must exit 0, apart from findings on lines that were already in a file you extended. For Flutter, run `flutter analyze --no-fatal-infos` and fix errors in your files.
+8. Lint what you wrote: `python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/lint_generated.py" --platform <platform> --allow-colors "<theme.tokens_source>" <files...>` must exit 0, apart from findings on lines that were already in a file you extended. For Flutter, run `flutter analyze --no-fatal-infos` and fix errors in your files.
 
 ## Output
 

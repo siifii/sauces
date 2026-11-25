@@ -228,3 +228,20 @@ def test_text_around_interpolation_flagged(tmp_path, code):
 def test_line_text_with_form_feed_stays_aligned(tmp_path):
     r = lint(tmp_path, "lib/a.dart", "a;\x0c\nb = Colors.red;\n")
     assert findings(r)[0]["text"] == "b = Colors.red;"
+
+
+def test_allow_colors_skips_only_the_color_rule(tmp_path):
+    code = "const brand = Color(0xFF3D5AFE);\nfinal w = Text('Hi');\n"
+    r = lint(tmp_path, "lib/core/constants/app_colors.dart", code,
+             "--allow-colors", "**/constants/app_colors.dart")
+    assert r.returncode == 1
+    assert rules(r) == [(2, "hardcoded-string")]  # strings still checked in token files
+    r = lint(tmp_path, "lib/core/constants/app_colors.dart", code.split("\n")[0] + "\n",
+             "--allow-colors", "**/constants/app_colors.dart")
+    assert r.returncode == 0
+
+
+def test_allow_colors_does_not_cover_other_files(tmp_path):
+    r = lint(tmp_path, "lib/features/login/view/login_page.dart",
+             "final c = Colors.red;\n", "--allow-colors", "**/constants/app_colors.dart")
+    assert rules(r) == [(1, "hardcoded-color")]

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Lint generated UI code for hard-coded colors and user-facing strings (Sauces).
 
-Stdlib only. Usage: lint_generated.py --platform flutter [--allow GLOB ...] files...
+Stdlib only. Usage: lint_generated.py --platform flutter [--allow GLOB ...]
+[--allow-colors GLOB ...] files...
 
 Prints {"version":1,"findings":[{"file","line","rule","text"}]} on stdout.
 Exit codes: 0 clean, 1 findings, 2 usage error (unknown platform, missing file).
@@ -9,7 +10,8 @@ Exit codes: 0 clean, 1 findings, 2 usage error (unknown platform, missing file).
 Comments are blanked (line numbers preserved) before matching, so commented-out
 code never flags. A `// sauces-lint-ignore` comment on a line suppresses findings
 that start on that line. Files matching an allow glob are skipped; --allow globs
-are added to the platform defaults.
+are added to the platform defaults. Files matching an --allow-colors glob (the project's
+token files) skip only hardcoded-color; every other rule still applies to them.
 
 hardcoded-string covers the first argument of Text()/SelectableText() and the value
 of hintText:, labelText:, helperText:, errorText:, tooltip:, semanticsLabel:. In that
@@ -238,6 +240,9 @@ def main(argv=None):
     p.add_argument("--platform", required=True, help="target platform (supported: %s)" % ", ".join(sorted(RULES)))
     p.add_argument("--allow", action="append", default=[], metavar="GLOB",
                    help="extra glob of files to skip, added to the platform defaults (repeatable)")
+    p.add_argument("--allow-colors", action="append", default=[], metavar="GLOB",
+                   help="glob of token files where color literals are allowed; other rules "
+                        "still apply (repeatable)")
     p.add_argument("files", nargs="*", help="files to lint")
     args = p.parse_args(argv)
 
@@ -250,12 +255,16 @@ def main(argv=None):
             return 2
 
     globs = [glob_to_regex(g) for g in DEFAULT_ALLOW[args.platform] + args.allow]
+    color_globs = [glob_to_regex(g) for g in args.allow_colors]
     exts = EXTENSIONS[args.platform]
     findings = []
     for f in sorted(set(args.files)):
         if not f.endswith(exts) or is_allowed(f, globs):
             continue
-        findings.extend(lint_file(f, RULES[args.platform]))
+        rules = RULES[args.platform]
+        if is_allowed(f, color_globs):
+            rules = [r for r in rules if r[0] != "hardcoded-color"]
+        findings.extend(lint_file(f, rules))
     findings.sort(key=lambda x: (x["file"], x["line"]))
     print(json.dumps({"version": 1, "findings": findings}, indent=2))
     return 1 if findings else 0
