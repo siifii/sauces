@@ -280,3 +280,28 @@ def test_strict_eval_requires_real_ltr_and_rtl_capture_paths(tmp_path):
         (verify / result["id"] / "rtl.png").write_bytes(png)
     verdict = run_script("eval.py", *command)
     assert verdict.returncode == 0, verdict.stdout + verdict.stderr
+
+
+def test_eval_lints_only_new_lines_in_tracked_changed_files(tmp_path):
+    import subprocess
+
+    results = make_result(tmp_path)
+    project = results / "flutter-bloc"
+    source = project / "lib/core/widgets/app_text_field.dart"
+    source.write_text("final old = Text('Existing text');\n")
+    for args in (
+        ("init", "-q"),
+        ("add", str(source.relative_to(project))),
+        ("-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+         "-c", "commit.gpgsign=false", "commit", "-qm", "baseline"),
+    ):
+        subprocess.run(["git", *args], cwd=project, check=True)
+    cmd = ("--results", str(results), "--fixtures", "flutter-bloc", "--builds-cmd", "true")
+    source.write_text("// Added comments shift the original line.\n" + source.read_text())
+    result = run_script("eval.py", *cmd)
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    source.write_text(source.read_text() + "final added = Text('New text');\n")
+    result = run_script("eval.py", *cmd)
+    assert result.returncode == 1
+    assert "✗ 1" in result.stdout

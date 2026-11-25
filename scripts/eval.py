@@ -32,6 +32,7 @@ Stdlib only. Exit codes: 0 every row passes, 1 a row fails, 2 usage error,
 import argparse
 import json
 import os
+import re
 import shlex
 import shutil
 import signal
@@ -107,7 +108,23 @@ def color_globs(root, profile):
     return globs
 
 
-def run_lint(root, files, allow_colors, platform):
+def changed_line_ranges(root, file):
+    """Return added/modified ranges, or None if there is no trusted baseline."""
+    try:
+        tracked = subprocess.run(["git", "cat-file", "-e", f"HEAD:{file}"],
+                                 cwd=root, capture_output=True)
+        if tracked.returncode:
+            return None
+        diff = subprocess.run(["git", "diff", "--no-ext-diff", "--no-textconv",
+                               "-U0", "HEAD", "--", file],
+                              cwd=root, capture_output=True, text=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    hunks = re.findall(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@", diff.stdout, re.M)
+    return [range(int(start), int(start) + int(count or 1)) for start, count in hunks]
+
+
+def run_lint(root, files, allow_colors, platform, changed_files=()):
     if not files:
         return True, "✓"
     flags = [arg for glob in allow_colors for arg in ("--allow-colors", glob)]
@@ -118,10 +135,15 @@ def run_lint(root, files, allow_colors, platform):
     if r.returncode == 0:
         return True, "✓"
     try:
-        n = len(json.loads(r.stdout)["findings"])
-    except (ValueError, KeyError):
+        findings = json.loads(r.stdout)["findings"]
+        ranges = {file: changed_line_ranges(root, file)
+                  for file in {finding["file"] for finding in findings} & set(changed_files)}
+        count = sum(ranges.get(finding["file"]) is None
+                    or any(finding["line"] in hunk for hunk in ranges[finding["file"]])
+                    for finding in findings)
+    except (ValueError, KeyError, TypeError):
         return False, "✗ error"
-    return False, f"✗ {n}"
+    return (False, f"✗ {count}") if count else (True, "✓")
 
 
 def run_builds(project, cmd):
@@ -178,8 +200,12 @@ def score_fixture(root, name, builds_cmd, require_captures=False):
             and result.get("passed") is True and result.get("nondeterministic") is False
             for result in results
         )
-    files, missing = source_files(root, project, generated + changed, platform)
-    lint_ok, lint_cell = run_lint(root, files, color_globs(root, selected), platform)
+    generated_source, missing_generated = source_files(root, project, generated, platform)
+    changed_source, missing_changed = source_files(root, project, changed, platform)
+    missing = set(missing_generated) | set(missing_changed)
+    lint_ok, lint_cell = run_lint(root, sorted(set(generated_source) | set(changed_source)),
+                                color_globs(root, selected), platform,
+                                set(changed_source) - set(generated_source))
     if missing:
         lint_ok, lint_cell = False, f"✗ {len(missing)} missing"
 
