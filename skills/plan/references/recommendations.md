@@ -28,7 +28,7 @@ Use this file in plan steps 4–6. Scan's `findings[]` say where the project fal
 
 ## 2. Option templates by area
 
-Platform names below are Flutter; for other platforms use the equivalent from that platform's build reference, or describe the change generically and say the detailed guidance comes in a later Sauces version.
+Platform names below are Flutter; for other platforms use the equivalent from that platform's build reference and the existing project configuration.
 
 | Area | `keep` means | Change option(s) | Typical files |
 |---|---|---|---|
@@ -64,9 +64,11 @@ The plan lists strings; build writes them where this table says:
 |---|---|
 | `arb` | The existing ARB files: the source locale gets the value, every other locale gets the source value marked for translation. Code reads them the way the project does (for example `context.l10n.loginTitle`). |
 | `string-catalog` | The existing String Catalog (`.xcstrings`). |
+| `strings-ios` | The owning target’s existing `.lproj` tables and `.stringsdict` files. |
 | `strings-xml` | The existing `res/values/strings.xml`, plus `values-<locale>/strings.xml` for other locales. |
+| `js-i18n` | The existing JS/TS message modules or locale catalogs. Preserve the existing translation API and key style. |
 | `compose-resources` | The existing `composeResources/values/strings.xml`. |
-| `none` | No new dependencies. Flutter: one feature-level strings class (for example `LoginStrings` in `lib/features/login/login_strings.dart`) holding every string of that feature; text kept there counts as not hard-coded. iOS: a new String Catalog (built in). Android: `strings.xml` (built in). |
+| `none` | No new dependencies. Flutter: one feature-level strings class (for example `LoginStrings` in `lib/features/login/login_strings.dart`) holding every string of that feature; text kept there counts as not hard-coded. iOS: a new String Catalog (built in). Android: `strings.xml` (built in). KMP: use Compose resources if configured; otherwise keep source copy in a feature-level strings object until the resource integration is approved. React Native: a feature messages module until a localization integration is approved. |
 
 When `localization.system` is `none`, always add a recommendation that offers proper localization, attached to scan's `strings` finding about missing localization (use `finding_id: "strings-localization"` if scan recorded none). For Flutter its `localize` option lists:
 
@@ -87,9 +89,10 @@ Screenshot tooling (design §5.6), needed by verify:
 | Platform | When the project has none (`screenshot_tooling.present: false`) |
 |---|---|
 | Flutter | Nothing: golden tests use `flutter_test`, which ships with the SDK. Fonts come from the project's own assets. |
-| iOS SwiftUI | `swift-snapshot-testing` (pointfreeco), `scope: "dev"`, test target only. |
-| Android Compose | Roborazzi (with Robolectric), `scope: "dev"`. |
-| Compose Multiplatform | Desktop-target screenshot test; detailed setup comes in a later Sauces version. |
+| iOS SwiftUI | Use existing XCTest UI tests when available. If a dedicated snapshot dependency is approved, add `swift-snapshot-testing` (pointfreeco) to the test target. |
+| Android Compose | Use existing Compose instrumentation when available. If a host-side screenshot dependency is approved, add Roborazzi with Robolectric to the appropriate test configuration. |
+| Compose Multiplatform | Reuse the configured Android or iOS test host. Do not create a desktop target solely for verification. |
+| React Native | Use the existing device test harness or scripted capture. Propose a new runner only when the project needs one and list its dependencies for approval. |
 
 When the project already has screenshot tooling, use it and add nothing. Adding tooling always goes through this list and the approval gate; never add it silently.
 

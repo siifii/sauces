@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Lint generated UI code for hard-coded colors and user-facing strings (Sauces).
 
-Stdlib only. Usage: lint_generated.py --platform flutter [--allow GLOB ...]
+Stdlib only. Usage: lint_generated.py --platform PLATFORM [--allow GLOB ...]
 [--allow-colors GLOB ...] files...
 
 Prints {"version":1,"findings":[{"file","line","rule","text"}]} on stdout.
@@ -32,6 +32,12 @@ MAX_TEXT = 200
 
 _STRING_ARGS = r"(?:hintText|labelText|helperText|errorText|tooltip|semanticsLabel)"
 
+COMPOSE_RULES = [
+    ("hardcoded-color", re.compile(r"\bColor\s*\(\s*0[xX][0-9A-Fa-f]+")),
+    ("hardcoded-string", re.compile(
+        r"(?:\bText\(\s*(?:text\s*=\s*)?|\bcontentDescription\s*=\s*)(?P<arg>)")),
+]
+
 # RULES[platform] -> [(rule_id, regex)]. A regex with an empty named group `arg` marks the
 # start of an argument expression whose string literals are checked (see docstring).
 RULES = {
@@ -42,8 +48,31 @@ RULES = {
             r"(?:\b(?:Text|SelectableText)\(\s*|\b" + _STRING_ARGS + r":\s*)"
             r"(?P<arg>)")),
     ],
+    "android-compose": COMPOSE_RULES,
+    "kmp-cmp": COMPOSE_RULES,
+    "react-native": [
+        ("hardcoded-color", re.compile(
+            r"\b(?:color|[a-zA-Z]+Color)\s*:\s*[\"']"
+            r"(?:#(?:[a-fA-F0-9]{8}|[a-fA-F0-9]{6}|[a-fA-F0-9]{4}|[a-fA-F0-9]{3})[\"']"
+            r"|(?:rgba?|hsla?)\()")),
+        ("hardcoded-string", re.compile(
+            r"<Text(?:\s+[^<>]*?)?>\s*(?=[^\s<{])[^<{}]*\w[^<{}]*</Text\s*>"
+            r"|\b(?:accessibilityLabel|accessibilityHint|placeholder)\s*=\s*"
+            r"[\"'][^\"'\n]+[\"']")),
+    ],
+    "ios-swiftui": [
+        ("hardcoded-color", re.compile(r"\bColor\s*\(\s*(?:red|white)\s*:")),
+        # SwiftUI localizes Text("Key") through LocalizedStringKey.
+        ("hardcoded-string", re.compile(r"\bText\(\s*verbatim\s*:\s*(?P<arg>)")),
+    ],
 }
-EXTENSIONS = {"flutter": (".dart",)}
+EXTENSIONS = {
+    "flutter": (".dart",),
+    "android-compose": (".kt",),
+    "ios-swiftui": (".swift",),
+    "kmp-cmp": (".kt",),
+    "react-native": (".js", ".jsx", ".ts", ".tsx"),
+}
 DEFAULT_ALLOW = {
     "flutter": ["**/theme/**", "**/*_strings.dart", "**/l10n/**", "**/*.g.dart"],
 }
@@ -254,7 +283,7 @@ def main(argv=None):
             print(f"file not found: {f}", file=sys.stderr)
             return 2
 
-    globs = [glob_to_regex(g) for g in DEFAULT_ALLOW[args.platform] + args.allow]
+    globs = [glob_to_regex(g) for g in DEFAULT_ALLOW.get(args.platform, []) + args.allow]
     color_globs = [glob_to_regex(g) for g in args.allow_colors]
     exts = EXTENSIONS[args.platform]
     findings = []

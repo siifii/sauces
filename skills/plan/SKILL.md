@@ -21,8 +21,8 @@ Turn `.sauces/manifest.json` (ingest) and `.sauces/project-profile.json` (scan) 
 
 1. Read `.sauces/manifest.json` and `.sauces/project-profile.json`. If either is missing, stop and tell the user to run `/sauces:ingest` and `/sauces:scan-project` (or `/sauces:cook`).
 2. Profile `mode`:
-   - `existing`: plan for the project in `projects`. With several, plan for the first in platform order (`flutter`, `ios-swiftui`, `android-compose`, `kmp-cmp`) unless the user named one, and say so.
-   - `ambiguous`: plan for the project the user picked during scan. In eval mode (`.sauces/eval-approve` exists) take the first in platform order.
+   - `existing`: plan for the project in `projects`. With several, plan for the first in platform order (`flutter`, `ios-swiftui`, `android-compose`, `kmp-cmp`, `react-native`) unless the user named one, and say so.
+   - `ambiguous`: plan for the project the user picked during scan. In eval mode (`.sauces/eval-approve` exists) take the first in platform order, breaking ties by root path. If no supported project was found, stop and report that a supported target is required.
    - `empty`: stop. Tell the user to scaffold a project first (`/sauces:scaffold`, or `/sauces:cook` offers it), then rerun scan and plan.
 3. Read the platform's build reference, `${CLAUDE_PLUGIN_ROOT}/skills/build/references/<platform>.md`, when it exists. Its sections (`## Tokens` … `## Folders`) describe good code on that platform; items and recommendations must agree with them, and `## Don't` lists what never to plan. Sections that only say "Filled in by the build task." carry no guidance yet. If no reference exists for the platform, plan from the profile alone and say in the summary that detailed platform guidance comes in a later Sauces version.
 4. Read the existing components' source files listed in `components[]` (params, variants, defaults), the theme files (`theme.location`, `theme.tokens_source`) and, when `localization.system` is not `none`, the source-locale string file in `localization.location`.
@@ -68,7 +68,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/design-review.md` and follow 
 
 ## 8. Write and validate
 
-Write `.sauces/plan.json` with `version: 1`, `approved: false`, `approved_by: null`, `platform`, `structure`, `items`, `recommendations`, `strings`, `dependency_changes` and `design_suggestions`. Use only schema fields. Validate:
+Write `.sauces/plan.json` with `version: 1`, `approved: false`, `approved_by: null`, `platform`, `project_root` (the selected profile entry’s exact root), `structure`, `items`, `recommendations`, `strings`, `dependency_changes` and `design_suggestions`. Use only schema fields. Validate:
 
 ```bash
 python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/check_json.py" "${CLAUDE_PLUGIN_ROOT}/skills/plan/references/plan-schema.json" .sauces/plan.json

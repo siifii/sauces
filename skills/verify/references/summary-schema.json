@@ -4,8 +4,9 @@
   "type": "object",
   "properties": {
     "version": {"type": "integer", "enum": [1]},
-    "platform": {"type": "string", "enum": ["flutter", "android-compose", "ios-swiftui", "kmp-cmp"]},
+    "platform": {"type": "string", "enum": ["flutter", "android-compose", "ios-swiftui", "kmp-cmp", "react-native"]},
     "threshold": {"type": "number", "minimum": 0, "maximum": 100},
+    "threshold_source": {"type": "string", "enum": ["default", "config"], "description": "default = 90; config = .sauces/config.json fidelity_threshold."},
     "renderer": {"type": "string", "description": "How screens were rendered, e.g. 'flutter test (test/sauces/)' or 'manual checklist'."},
     "results": {
       "type": "array",
@@ -23,7 +24,8 @@
           "scores": {"type": "array", "items": {"type": "number", "minimum": 0, "maximum": 100}, "description": "Score of each iteration, in order."},
           "rtl_issues": {"type": "array", "items": {"type": "string"}},
           "deviations": {"type": "array", "items": {"type": "string"}, "description": "suggestion_ids from .sauces/deviations.json for this screen state."},
-          "remaining": {"type": "array", "items": {"type": "string"}, "description": "Differences left as they are, each with its reason."}
+          "remaining": {"type": "array", "items": {"type": "string"}, "description": "Differences left as they are, each with its reason."},
+          "nondeterministic": {"type": "boolean", "description": "True when two renders of the same code scored more than 0.5 apart (R4)."}
         },
         "required": ["id", "screen", "state", "reference", "rendered", "score", "passed", "iterations", "scores", "rtl_issues", "deviations", "remaining"],
         "additionalProperties": false

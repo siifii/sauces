@@ -276,3 +276,57 @@ def test_plan_design_suggestions(tmp_path):
     del bad["guideline"]
     r = check(tmp_path, _schema(SCHEMAS[2]), _plan(design_suggestions=[bad]))
     assert r.returncode == 1 and "missing required 'guideline'" in r.stdout
+
+
+def _verify_result(**over):
+    r = {"id": "login--default", "screen": "login", "state": "default",
+         "reference": ".sauces/references/login--default.png", "rendered": True,
+         "score": 93.4, "passed": True, "iterations": 2, "scores": [86.1, 93.4],
+         "rtl_issues": [], "deviations": [], "remaining": []}
+    r.update(over)
+    return r
+
+
+def _verify_summary(*results, **over):
+    s = {"version": 1, "platform": "flutter", "threshold": 90,
+         "renderer": "flutter test (test/sauces/login_render_test.dart)",
+         "results": list(results) or [_verify_result()]}
+    s.update(over)
+    return s
+
+
+VERIFY_OK = {
+    "rendered": _verify_summary(),
+    "nondeterministic": _verify_summary(_verify_result(nondeterministic=True)),
+    "unrendered": _verify_summary(_verify_result(
+        rendered=False, score=None, passed=False, iterations=0, scores=[],
+        remaining=["flutter not installed"])),
+    "threshold_from_config": _verify_summary(threshold=95, threshold_source="config"),
+}
+VERIFY_BAD = {
+    "four_iterations": (_verify_summary(_verify_result(iterations=4)), "results[0].iterations"),
+    "extra_key": (_verify_summary(_verify_result(extra=1)), "unexpected property 'extra'"),
+    "id_without_state": (_verify_summary(_verify_result(id="login")), "results[0].id"),
+    "nondeterministic_string": (_verify_summary(_verify_result(nondeterministic="yes")),
+                                "results[0].nondeterministic"),
+    "bad_threshold_source": (_verify_summary(threshold_source="argument"), "threshold_source"),
+}
+
+
+@pytest.mark.parametrize("name", VERIFY_OK)
+def test_verify_summary_schema_accepts(tmp_path, name):
+    r = check(tmp_path, _schema(SCHEMAS[4]), VERIFY_OK[name])
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+@pytest.mark.parametrize("name", VERIFY_BAD)
+def test_verify_summary_schema_rejects(tmp_path, name):
+    data, where = VERIFY_BAD[name]
+    r = check(tmp_path, _schema(SCHEMAS[4]), data)
+    assert r.returncode == 1 and where in r.stdout, r.stdout + r.stderr
+
+
+def test_sample_verify_summary_matches_schema():
+    r = run_script("check_json.py", str(REPO / SCHEMAS[4]),
+                   str(REPO / "tests" / "data" / "sauces_sample" / "verify" / "summary.json"))
+    assert r.returncode == 0, r.stdout + r.stderr

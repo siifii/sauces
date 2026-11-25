@@ -1,7 +1,7 @@
 ---
 name: component-builder
 description: |
-  Use this agent to implement exactly one UI component for one platform (Jetpack Compose, SwiftUI, Compose Multiplatform or Flutter) from an approved Sauces plan entry, following the target project's conventions. Examples:
+  Use this agent to implement exactly one UI component for one platform (Jetpack Compose, SwiftUI, Compose Multiplatform, React Native or Flutter) from an approved Sauces plan entry, following the target project's conventions. Examples:
 
   <example>
   Context: The plan is approved and lists a new PasswordField molecule for a Flutter BLoC project.

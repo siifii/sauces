@@ -22,7 +22,7 @@ Turn the approved `.sauces/plan.json` into code the project's developers would m
 ## 1. Load
 
 1. Read `.sauces/plan.json`. Check `approved` (above). If it is missing, tell the user to run `/sauces:plan` (or `/sauces:cook`).
-2. Read `.sauces/project-profile.json` and take the project whose `platform` equals `plan.platform` (its `root` is where code and tool commands go; prefix plan paths with it when it is not `.`). Read `.sauces/manifest.json` for the design values and the reference images in `.sauces/references/`; look at the reference image of every state before building its screen.
+2. Read `.sauces/project-profile.json` and match the project by `plan.platform` and `plan.project_root`. For a legacy plan without `project_root`, proceed only if there is exactly one match by platform; otherwise ask for a fresh plan. Run tools in that project root. Treat plan file paths as relative to the target root and do not prepend the project root again. Read `.sauces/manifest.json` for the design values and the reference images in `.sauces/references/`; look at the reference image of every state before building its screen.
 3. Read the build reference for the platform: `${CLAUDE_PLUGIN_ROOT}/skills/build/references/<platform>.md`. It is binding: every section (`## Tokens` … `## Don't`) applies to every file you write. If no reference exists for the platform, stop and say that building for it arrives in a later Sauces version.
 4. Read the source of every component the plan reuses or extends, the theme files (`theme.location`, `theme.tokens_source`), the localization config and source-locale string file, the nearest existing feature (page, state, tests) and the project's test helpers. Match their style: imports, naming, file layout, formatting.
 5. Run `git status --porcelain` in the project root when it is a git repository and remember which files were already modified, so the summary separates your changes from the user's.
@@ -34,7 +34,7 @@ From `plan.json` collect:
 - `structure.choice`: where new files go (each item's `path` and `layer` already follow it).
 - Chosen recommendations: every `recommendations[]` entry with `choice` ≠ `keep`, with the option's `changes` and `files`. Apply each exactly as listed, in the build-order step it belongs to (theme and token changes first). `finding_id`s such as `design-theme-*` or `strings-localization` have no scan finding behind them; that is expected.
 - Applied design suggestions: every `design_suggestions[]` entry with `choice: "apply"`. Its `change` replaces what the design shows for the affected element (section 4).
-- `dependency_changes`: add each package with the platform's tool (Flutter: `flutter pub add <package>:<version>`, `dev:<package>` for `scope: "dev"`) before writing code that uses it.
+- `dependency_changes`: add each package with the platform's tool (see the platform reference; Flutter: `flutter pub add <package>:<version>`, `dev:<package>` for `scope: "dev"`) before writing code that uses it.
 
 ## 3. Build in order
 
@@ -69,7 +69,9 @@ Read each item's `notes` first: kept-theme fidelity differences (leave them; ver
 
 ## 5. Check and fix
 
-Run these from the project root and fix every problem, then run them again until they pass. Never silence a check (no `// ignore:` comments, no `sauces-lint-ignore`, no removed tests) unless the finding is a false positive you can explain in the summary.
+For a platform other than Flutter, run the platform reference's Checks. Run step 5.1 on the changed UI source files (Kotlin, Swift, or JavaScript/TypeScript) with the selected platform ID, including the same token-file allowances, scope and JSON output. Apply the extend self-check in step 5.5 and report unavailable tooling and any checks it prevented.
+
+For Flutter, run the following from the project root and fix every problem, then run the checks again until they pass. Never silence a check (no `// ignore:` comments, no `sauces-lint-ignore`, no removed tests) unless the finding is a false positive you can explain in the summary.
 
 1. Lint every Dart file you created or changed, tests included:
 
@@ -79,6 +81,8 @@ Run these from the project root and fix every problem, then run them again until
    ```
 
    Run it from the project root with relative paths. The files are everything you created or changed: your list, plus any path `git status --porcelain` shows now that was not in the step 1.5 list. `--allow-colors` lets color literals stand in the project's token files (the profile's token source; for `atomic`/`layered` the `tokens` folder) while string rules still apply there; leave out one that does not apply. The `theme/`, `l10n/` and `*_strings.dart` defaults are built in. Exit 0 is clean. Exit 1 prints JSON findings (`file`, `line`, `rule`, `text`): move each color to a token and each string to the localization system. In an existing file you changed, fix only findings on lines you wrote; a finding on a line that was already there (`git diff -U0`; files dirty before step 1.5 are the user's work in progress) is the user's code: leave it and list it in the summary. Without git, lint new files whole and, in changed files, only the lines of the symbols the plan told you to add. Exit 2 is a usage error (a missing file): fix the paths.
+
+   Once lint passes (or only the user's own lines are left), run it one last time with the same arguments and save its JSON output to `.sauces/lint.json` at the target root (append `> "<target root>/.sauces/lint.json"`; from the target root itself that is `> .sauces/lint.json`). The report reads it; a non-zero exit there is expected when user lines remain.
 2. `flutter gen-l10n` again if you touched ARB files since step 4.
 3. `dart format` the files you created (not the existing files you extended; see the reference's Extend rules).
 4. `flutter analyze --no-fatal-infos`: fix every error and warning in files you touched. Report pre-existing issues in other files without fixing them.

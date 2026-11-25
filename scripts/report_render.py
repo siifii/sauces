@@ -135,11 +135,14 @@ class Inputs:
         if not isinstance(self.profile, dict):
             return None
         projects = list_of(self.profile.get("projects"))
-        platform = (self.plan or {}).get("platform")
-        for proj in projects:
-            if proj.get("platform") == platform:
-                return proj
-        return projects[0] if projects else None
+        plan = self.plan or {}
+        platform = plan.get("platform")
+        if not platform:
+            return projects[0] if projects else None
+        root = plan.get("project_root")
+        matches = [project for project in projects if project.get("platform") == platform
+                   and (root is None or project.get("root") == root)]
+        return matches[0] if len(matches) == 1 else None
 
     def platform(self):
         if isinstance(self.plan, dict) and self.plan.get("platform"):

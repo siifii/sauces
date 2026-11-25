@@ -1,5 +1,6 @@
 """Headless tests for the scaffold skill (marker: skill), Flutter create mode."""
 import json
+import re
 import subprocess
 
 import pytest
@@ -10,11 +11,13 @@ pytestmark = [pytest.mark.skill, needs_claude, needs_flutter]
 
 
 def snapshot(root):
-    """{relative path: bytes} for every file outside .git/ and .sauces/."""
+    """{relative path: bytes} for every file outside .git/ (the eval-approve marker is skipped)."""
     return {
         str(p.relative_to(root)): p.read_bytes()
         for p in sorted(root.rglob("*"))
-        if p.is_file() and not {".git", ".sauces"} & set(p.relative_to(root).parts)
+        if p.is_file()
+        and ".git" not in p.relative_to(root).parts
+        and p.name != "eval-approve"
     }
 
 
@@ -32,6 +35,12 @@ def test_scaffold_empty(scaffolded):
     app = workdir / "flutter"
     assert (app / "pubspec.yaml").is_file(), log
     assert (app / "lib" / "l10n" / "app_ar.arb").is_file(), log
+    assert (app / "lib" / "core" / "widgets").is_dir(), log
+    readme = (app / "README.md").read_text()
+    assert "## Sauces scaffold" in readme, log
+    assert "feature-first" in readme, log
+    assert re.search(r"\d{4}-\d{2}-\d{2}", readme), log
+    assert "flutter_bloc ^" in readme, log
     for cmd in (["flutter", "analyze", "--no-fatal-infos"], ["flutter", "test"]):
         run = subprocess.run(cmd, cwd=app, capture_output=True, text=True)
         assert run.returncode == 0, f"{' '.join(cmd)}\n{run.stdout}\n{run.stderr}\n{log}"
@@ -53,4 +62,4 @@ def test_scaffold_refuses_non_empty(tmp_path):
     out = result.stdout + result.stderr
     assert snapshot(workdir) == before, out
     assert not (workdir / "flutter").exists(), out
-    assert "not empty" in out.lower(), out
+    assert re.search(r"not empty|isn.t empty|is not empty", out, re.I), out

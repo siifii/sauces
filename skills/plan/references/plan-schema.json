@@ -29,8 +29,14 @@
         "flutter",
         "android-compose",
         "ios-swiftui",
-        "kmp-cmp"
+        "kmp-cmp",
+        "react-native"
       ]
+    },
+    "project_root": {
+      "type": "string",
+      "pattern": "^.+$",
+      "description": "Exact root from the selected project-profile entry, relative to the target root."
     },
     "items": {
       "type": "array",

@@ -43,6 +43,18 @@ Future<void> _loadFonts() async {
     }
     await loader.load();
   }
+  // Fallback when the app's manifest omits MaterialIcons (flutter test run
+  // without uses-material-design bundling): read it from the SDK cache.
+  final sdk = Platform.environment['FLUTTER_ROOT'];
+  if (sdk != null) {
+    final icons = File('$sdk/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+    if (icons.existsSync()) {
+      final bytes = icons.readAsBytesSync();
+      final loader = FontLoader('MaterialIcons')
+        ..addFont(Future.value(ByteData.sublistView(bytes)));
+      await loader.load();
+    }
+  }
 }
 
 Future<void> _render(
@@ -55,6 +67,9 @@ Future<void> _render(
   tester.view.devicePixelRatio = 2; // reference scale
   addTearDown(tester.view.reset);
   debugDisableShadows = false; // render real elevation shadows
+  final errors = <FlutterErrorDetails>[];
+  final previousOnError = FlutterError.onError;
+  FlutterError.onError = errors.add; // collect, so the PNG is still written
   try {
     await tester.pumpWidget(
       MaterialApp(
@@ -74,18 +89,31 @@ Future<void> _render(
     // Fixed pumps, not pumpAndSettle: spinners animate forever.
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-    expect(tester.takeException(), isNull);
-    if (_renderDir.isEmpty) return;
-    final element = find.byType(MaterialApp).evaluate().single;
-    await tester.runAsync(() async {
-      final image = await captureImage(element);
-      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-      image.dispose();
-      final file = File('$_renderDir/$name.png');
-      file.parent.createSync(recursive: true);
-      file.writeAsBytesSync(bytes!.buffer.asUint8List());
-    });
+    if (_renderDir.isNotEmpty) {
+      final element = find.byType(MaterialApp).evaluate().single;
+      await tester.runAsync(() async {
+        final image = await captureImage(element);
+        final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+        image.dispose();
+        final file = File('$_renderDir/$name.png');
+        file.parent.createSync(recursive: true);
+        file.writeAsBytesSync(bytes!.buffer.asUint8List());
+      });
+    }
+    final exception = tester.takeException();
+    if (_renderDir.isNotEmpty) {
+      final messages = [
+        for (final error in errors) error.exceptionAsString(),
+        if (exception != null) exception.toString(),
+      ];
+      File('$_renderDir/$name.errors.txt').writeAsStringSync(
+        messages.map((message) => message.replaceAll(RegExp(r'\s+'), ' ').trim()).join('\n'),
+      );
+    }
+    expect(exception, isNull);
+    expect(errors, isEmpty);
   } finally {
+    FlutterError.onError = previousOnError;
     debugDisableShadows = true; // flutter_test checks debug flags are restored
   }
 }
@@ -100,19 +128,21 @@ const _filled = LoginState(email: 'alex@example.com', password: 'password');
 void main() {
   setUpAll(_loadFonts);
 
-  testWidgets('login default', (t) => _render(t, _login(_filled), 'login--default'));
-  testWidgets(
-    'login error',
-    (t) => _render(t, _login(_filled.copyWith(status: LoginStatus.failure)), 'login--error'),
-  );
-  testWidgets(
-    'login loading',
-    (t) => _render(t, _login(_filled.copyWith(status: LoginStatus.loading)), 'login--loading'),
-  );
-  testWidgets(
-    'login default rtl',
-    (t) => _render(t, _login(_filled), 'login--default--rtl', locale: const Locale('ar')),
-  );
+  final states = <String, LoginState>{
+    'default': _filled,
+    'error': _filled.copyWith(status: LoginStatus.failure),
+    'loading': _filled.copyWith(status: LoginStatus.loading),
+  };
+  // Every state gets an LTR test and an RTL test (--rtl suffix).
+  for (final entry in states.entries) {
+    for (final rtl in [false, true]) {
+      final name = 'login--${entry.key}${rtl ? '--rtl' : ''}';
+      testWidgets(
+        name,
+        (t) => _render(t, _login(entry.value), name, locale: Locale(rtl ? 'ar' : 'en')),
+      );
+    }
+  }
 }
 ```
 
@@ -120,6 +150,7 @@ Adapt it, don't paste it blind:
 
 - Size: `physicalSize` is the reference PNG's pixel size and `devicePixelRatio` the design's scale (the manifest state's `layout`, or `reference width / logical width`; 2 for the sample design). When the design's logical width is unknown, use 2 and say so.
 - The PNG `name` is exactly the state's id, `<screen>--<state>`, and `<screen>--<state>--rtl` for the RTL pass.
+- Write `<name>.errors.txt` beside each PNG, with one collected exception or overflow per line; write an empty file for a clean render. Write both files before failing the test.
 - One RTL test per design state when the project has a right-to-left locale (the profile's `localization.locales`: `ar`, `he`, `fa`, `ur`). Without one, wrap the screen in `Directionality(textDirection: TextDirection.rtl, child: ...)` and say in the summary that the RTL pass used the source strings.
 - Riverpod, Provider, setState: seed through the hook the build reference describes (`ProviderScope(overrides: ...)`, `ChangeNotifierProvider(create: ...)`, `initialState:`).
 - Images from the network can't load in tests. If the screen shows one, note it in `remaining` instead of faking it.
@@ -127,10 +158,10 @@ Adapt it, don't paste it blind:
 
 ## Run
 
-From the project root, with an absolute render folder (paths may contain spaces, so keep the quotes):
+From the project root, once per screen (never the whole folder), with an absolute render folder (paths may contain spaces, so keep the quotes):
 
 ```bash
-flutter test --dart-define="SAUCES_RENDER_DIR=$PWD/.sauces/verify/_render" test/sauces/
+flutter test --dart-define="SAUCES_RENDER_DIR=$PWD/.sauces/verify/_render" test/sauces/<screen>_render_test.dart
 ```
 
 - Exit 0: every PNG is in `.sauces/verify/_render/`.

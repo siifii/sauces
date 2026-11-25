@@ -243,3 +243,25 @@ def test_default_output_path(tmp_path):
 def test_missing_sauces_dir_is_usage_error(tmp_path):
     result = run_script("report_render.py", "--sauces-dir", str(tmp_path / "nope"))
     assert result.returncode == 2
+
+
+def test_report_uses_selected_root_when_projects_share_a_platform(tmp_path):
+    sauces = tmp_path / ".sauces"
+    shutil.copytree(SAMPLE, sauces)
+    profile_path = sauces / "project-profile.json"
+    profile = json.loads(profile_path.read_text())
+    app = profile["projects"][0]
+    profile["projects"] = [
+        dict(app, root="first-app", architecture="first-app-architecture"),
+        dict(app, root="selected-app", architecture="selected-app-architecture"),
+    ]
+    profile_path.write_text(json.dumps(profile))
+
+    plan_path = sauces / "plan.json"
+    plan = json.loads(plan_path.read_text())
+    plan["project_root"] = "selected-app"
+    plan_path.write_text(json.dumps(plan))
+
+    html = render(sauces, tmp_path)
+    assert "selected-app-architecture" in html
+    assert "first-app-architecture" not in html

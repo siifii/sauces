@@ -47,13 +47,19 @@ Use the project's own prefix when it has one (for example `lib/src/` instead of 
 
 ### Compose, Compose Multiplatform, SwiftUI
 
-| Platform | Folders |
-|---|---|
-| Android Compose | Defined in the next plans. |
-| Compose Multiplatform (`commonMain`) | Defined in the next plans. |
-| SwiftUI | Defined in the next plans. |
+Locate the owning source root from the profile and build descriptors. For Android use the app module’s Kotlin package root (it may be under `src/main/java`). For CMP use the shared module’s `commonMain/kotlin` package root. For SwiftUI use the actual app or SwiftPM target folder and ensure new files belong to the target.
 
-Until then, offer only `follow` (when scan found a structure) and `feature-first` adapted to the platform's usual folders, and say in the plan that the full mapping comes in a later Sauces version.
+| Pattern | Compose and Compose Multiplatform | SwiftUI |
+|---|---|---|
+| `atomic` | `designsystem/{tokens,atoms,molecules,organisms}/`, `features/<feature>/` | `DesignSystem/{Tokens,Atoms,Molecules,Organisms}/`, `Features/<Feature>/` |
+| `layered` | `designsystem/{tokens,foundations,components,patterns}/`, `features/<feature>/` | `DesignSystem/{Tokens,Foundations,Components,Patterns}/`, `Features/<Feature>/` |
+| `feature-first` | `core/{theme,ui}/`, `features/<feature>/{ui,state}/` | `Core/{Theme,UI}/`, `Features/<Feature>/{Views,State}/` |
+
+Use these as defaults for new projects. Keep localized strings and images in their platform resource locations, and use the observed project paths and naming in follow mode.
+
+### React Native
+
+Use the existing application source root (for example `src/`). For atomic layouts use `design-system/{tokens,atoms,molecules,organisms}/`. For layered layouts use `design-system/{tokens,foundations,components,patterns}/`. For feature-first layouts use `shared/{theme,ui}/` and `features/<feature>/`. Keep Expo Router entry files in the actual route tree and the feature screen implementation outside it. In follow mode use the app's observed paths and naming.
 
 ## 3. Level → layer
 

@@ -1,6 +1,6 @@
 ---
 name: scan-project
-description: This skill should be used when the user asks to "scan the project", "detect the architecture", "inventory components", "find the theme and design tokens", "what UI toolkit does this app use", or runs "/sauces:scan-project". Profiles an Android Compose, iOS SwiftUI, KMP/CMP or Flutter project into .sauces/project-profile.json.
+description: This skill should be used when the user asks to "scan the project", "detect the architecture", "inventory components", "find the theme and design tokens", "what UI toolkit does this app use", or runs "/sauces:scan-project". Profiles an Android Compose, iOS SwiftUI, KMP/CMP, React Native or Flutter project into .sauces/project-profile.json.
 ---
 
 # Scan project
@@ -21,13 +21,15 @@ Look for marker files at the target root and in each direct child folder (one le
 | Platform id | Marker files |
 |---|---|
 | `flutter` | `pubspec.yaml` that depends on `flutter: sdk: flutter` |
-| `ios-swiftui` | `*.xcodeproj` or `Package.swift` with Swift sources that `import SwiftUI` |
-| `android-compose` | `build.gradle(.kts)` / `settings.gradle(.kts)` with Compose enabled (`buildFeatures { compose = true }`, the `org.jetbrains.kotlin.plugin.compose` plugin, or `androidx.compose` dependencies) |
-| `kmp-cmp` | Gradle build with `kotlin("multiplatform")` / `org.jetbrains.kotlin.multiplatform` and a `src/commonMain` source set; Compose Multiplatform when it applies `org.jetbrains.compose` and has composables in `commonMain` |
+| `ios-swiftui` | `*.xcodeproj` or `Package.swift` with Swift sources that `import SwiftUI` and an iOS target or declared iOS support |
+| `android-compose` | `build.gradle(.kts)` / `settings.gradle(.kts)` with Compose enabled in the root or an included app module (`buildFeatures { compose = true }`, the `org.jetbrains.kotlin.plugin.compose` plugin, or `androidx.compose` dependencies) |
+| `kmp-cmp` | Gradle build with `kotlin("multiplatform")` / `org.jetbrains.kotlin.multiplatform` in the root or an included module, with `org.jetbrains.compose`, shared composables in `src/commonMain`, and at least one mobile target |
+| `react-native` | App package with a runtime `react-native` dependency or an Expo app dependency and a mobile entry point or routes |
 
 Then reconcile:
 
-- A Flutter project's own host folders (`android/`, `ios/`, `macos/`, `web/`, `linux/`, `windows/` inside the Flutter root, recognisable by `GeneratedPluginRegistrant`, `Flutter/` xcconfigs, or the `dev.flutter.flutter-gradle-plugin` plugin in `settings.gradle(.kts)`; `flutter.sdk` lives in the usually gitignored `local.properties`, so do not rely on it) are part of that Flutter project. Never report them as separate projects.
+- Resolve candidate roots from their build descriptors and host relationships before classifying. A Flutter project's own host folders (`android/`, `ios/`, `macos/`, `web/`, `linux/`, `windows/` inside the Flutter root, recognisable by `GeneratedPluginRegistrant`, `Flutter/` xcconfigs, or the `dev.flutter.flutter-gradle-plugin` plugin in `settings.gradle(.kts)`; `flutter.sdk` lives in the usually gitignored `local.properties`, so do not rely on it) are part of that Flutter project. Never report them as separate projects.
+- Treat React Native Android and iOS host folders and Expo-generated projects as part of their JS app when build files load React Native or use Expo autolinking. For a JS workspace, inspect packages declared in local workspace metadata for app entry points. Ignore React Native libraries without a runnable app.
 - Likewise, a KMP project's `androidApp/` / `iosApp/` folders belong to the KMP project. Record native UI in them under that one `kmp-cmp` entry.
 - An Android Gradle project without Compose (XML Views only) or an iOS project with only UIKit is not a supported target. Treat it as an unsupported app project.
 - Backend, cloud-function, tooling and script folders (for example Firebase `functions/`, `backend/`, `server/`, `api/`, `scripts/`, `tools/`, infrastructure code) are not app/UI projects. Ignore them for mode selection and mention them in the summary.
@@ -36,16 +38,16 @@ Set `root` to the project folder relative to the target root: `"."` for the root
 
 ## 2. Set the mode
 
-- `existing`: at least one supported project was found. List them all in `projects`, ordered by platform: `flutter`, `ios-swiftui`, `android-compose`, `kmp-cmp`.
+- `existing`: a supported project was found and none of the ambiguous conditions below apply. List them all in `projects`, ordered by platform: `flutter`, `ios-swiftui`, `android-compose`, `kmp-cmp`, `react-native`.
 - `empty`: no supported project and no source code at all. A folder with only README/docs, licences, dotfiles or images is empty. Write `projects: []`.
 - `ambiguous`: one of these holds:
   - no supported project was found, but there is source code you cannot classify;
-  - beside a supported project sits another **app/UI** project that is unsupported (a native Android Views or UIKit app, React Native, Ionic, a web frontend shipped as the mobile app);
-  - several supported projects of different platforms sit at the same level with no clear primary (for example Flutter and a native SwiftUI app side by side, neither nested in the other).
+  - beside a supported project sits another **app/UI** project that is unsupported (a native Android Views or UIKit app, Ionic, a web frontend shipped as the mobile app);
+  - several supported projects sit at the same level with no clear primary (for example Flutter and a native SwiftUI app side by side, neither nested in the other).
 
   Backend, cloud-function, tooling or script folders beside a supported project never make the mode `ambiguous`. Still write every supported project you found to `projects`.
 
-When the mode is `ambiguous`, stop after writing and validating the profile and ask the user which project to target. If `.sauces/eval-approve` exists (eval mode, no human present), do not ask: choose the first project in platform order (`flutter`, `ios-swiftui`, `android-compose`, `kmp-cmp`), say which one you chose and why in the summary, and keep the profile as written.
+When the mode is `ambiguous`, stop after writing and validating the profile. If the list of supported projects is empty, report the unsupported or unclassified source and stop. Otherwise ask the user which project to target. If `.sauces/eval-approve` exists (eval mode, no human present), do not ask: choose the first project in platform order (`flutter`, `ios-swiftui`, `android-compose`, `kmp-cmp`, `react-native`; break ties by root path), say which one you chose and why in the summary, and keep the profile as written.
 
 When the mode is `empty`, skip steps 3–4, write `{"version": 1, "mode": "empty", "projects": []}`, validate it, and tell the user that `cook` will offer to scaffold a new project.
 
@@ -53,7 +55,7 @@ When the mode is `empty`, skip steps 3–4, write `{"version": 1, "mode": "empty
 
 Load the platform's reference before profiling: `${CLAUDE_PLUGIN_ROOT}/skills/scan-project/references/<platform>.md` (for example `references/flutter.md`). It lists the exact files, dependencies and patterns to grep and the allowed values for each field. Follow it.
 
-If no reference exists yet for a platform (only Flutter has one in this version), detect from the marker files above and the source, fill only what you can read with confidence, use `"unknown"` for the rest, and say in the summary that detailed heuristics for that platform come in a later Sauces version.
+If no reference exists yet for a platform, detect from the marker files above and the source, fill only what you can read with confidence, use `"unknown"` for the rest, and say in the summary that detailed heuristics for that platform come in a later Sauces version.
 
 Fill every required field of the schema:
 
@@ -82,10 +84,10 @@ A finding is a place where the project falls short of the platform's best practi
 - Stay inside the scope the new UI touches: the theme, shared components, and the conventions new screens will follow. Do not audit unrelated business logic, networking or build setup.
 - Absence findings are allowed when they describe a concrete missing practice, for example `screenshot-tests`: "no screenshot/golden tests found" with the test folder as the path, or `previews`: "shared widgets have no previews" with the widget paths.
 
-Ground `colors` and `strings` findings in evidence. For Flutter, run the lint helper on the project's hand-written Dart files and use its output:
+Ground `colors` and `strings` findings in evidence. Run the lint helper on the project's hand-written UI files and use its output:
 
 ```bash
-python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/lint_generated.py" --platform flutter <files...>
+python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/lint_generated.py" --platform <platform-id> <files...>
 ```
 
 Pass files relative to the project root and run it from there (quote paths: the project folder may contain spaces). It prints JSON `findings[] {file, line, rule, text}` and exits 1 when it finds anything; exit 1 is a normal result here, not an error. Exit 2 is a usage error (bad argument or missing file), not "no findings": fix the command or file list and rerun until it exits 0 or 1. Group its hits into findings (one finding per file or per clear pattern), convert `file` to a path relative to the target root, and review each hit before reporting it: drop false positives the helper cannot know about. Theme definition files are where colors belong, so never report a color literal inside the theme or token files as a finding.
