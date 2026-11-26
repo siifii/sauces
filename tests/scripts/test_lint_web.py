@@ -59,6 +59,7 @@ def test_web_react_hits(tmp_path, rel, code, expected):
     ("a.tsx", "if (a > b && c < d) go();"),
     ("a.tsx", '<input id="email" />\n<label htmlFor="email">{t("e")}</label>'),
     ("a.tsx", "// <h1>Old title</h1>"),
+    ("a.tsx", "<label htmlFor={id}>{label}</label>\n<div>\n<span />\n<input\n  id={id}\n/>"),
 ])
 def test_web_react_near_misses(tmp_path, rel, code):
     r = lint(tmp_path, rel, code)

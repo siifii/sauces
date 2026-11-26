@@ -35,7 +35,8 @@ Web platforms (web-react) use a JS/TS/JSX scanner and a CSS declaration scanner:
   utilities (ml- mr- pl- pr- left- right- border-l border-r rounded-l rounded-r text-left
   text-right float-left float-right, with variant prefixes) inside string/template literals.
 - a11y-basic: <img> without alt; onClick on div/span; input/select/textarea with no
-  aria-label, aria-labelledby, id referenced by an htmlFor in the same file, <label> on the
+  aria-label, aria-labelledby, id referenced by an htmlFor in the same file (the same
+  literal, or the same simple expression: htmlFor={id} / id={id}), <label> on the
   same or previous line, or type hidden/submit/button. Label matching is file-local.
 CSS/SCSS files get only hardcoded-color and physical-direction.
 
@@ -554,6 +555,8 @@ def react_findings(src, skip_colors):
     html_for = set()
     for m in re.finditer(r"\bhtmlFor\s*=\s*\{?\s*[\"'`]([^\"'`]+)", src):
         html_for.add(m.group(1))
+    for m in re.finditer(r"\bhtmlFor\s*=\s*\{\s*([\w.$]+)\s*\}", src):
+        html_for.add("{" + m.group(1) + "}")
     lines = src.split("\n")
     for m in TAG_START.finditer(masked):
         if inside(m.start()):
@@ -584,7 +587,10 @@ def react_findings(src, skip_colors):
             hits.append((m.start(), "a11y-basic"))
         if low in ("input", "select", "textarea"):
             typ = literal_value(attrs.get("type", (None, 0))[0]) or ""
-            idv = literal_value(attrs.get("id", (None, 0))[0])
+            raw_id = attrs.get("id", (None, 0))[0]
+            idv = literal_value(raw_id)
+            if idv is None and raw_id and re.fullmatch(r"\{\s*[\w.$]+\s*\}", raw_id):
+                idv = "{" + raw_id.strip()[1:-1].strip() + "}"
             ln = src.count("\n", 0, m.start())
             before = "\n".join(lines[max(0, ln - 1):ln]) + "\n" + src[src.rfind("\n", 0, m.start()) + 1:m.start()]
             labelled = ("aria-label" in attrs or "aria-labelledby" in attrs

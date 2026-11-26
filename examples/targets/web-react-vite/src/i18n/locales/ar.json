@@ -1,0 +1,15 @@
+{
+  "home": {
+    "title": "حسابك",
+    "greeting": "مرحبًا، {{name}}",
+    "searchLabel": "البحث في الطلبات",
+    "ordersTitle": "الطلبات الأخيرة",
+    "ordersBody_zero": "ليس لديك طلبات مفتوحة.",
+    "ordersBody_one": "لديك طلب واحد مفتوح.",
+    "ordersBody_two": "لديك طلبان مفتوحان.",
+    "ordersBody_few": "لديك {{count}} طلبات مفتوحة.",
+    "ordersBody_many": "لديك {{count}} طلبًا مفتوحًا.",
+    "ordersBody_other": "لديك {{count}} طلب مفتوح.",
+    "viewOrders": "عرض الطلبات"
+  }
+}

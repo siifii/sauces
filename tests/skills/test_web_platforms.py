@@ -80,3 +80,40 @@ def test_ingest_breakpoint_reference():
 def test_plan_skill_lists_web_and_breakpoints():
     text = (REPO / "skills/plan/SKILL.md").read_text()
     assert "web-react" in text and "web-html" in text and "breakpoints" in text
+
+
+def lint_platform(platform, *paths):
+    r = run_script("lint_generated.py", "--platform", platform, *map(str, paths))
+    return [(f["file"].rsplit("/", 1)[-1], f["rule"]) for f in json.loads(r.stdout)["findings"]]
+
+
+@pytest.mark.parametrize("name,files", [
+    ("web-react-vite", ["src/components/Button/Button.tsx", "src/theme/tokens.css",
+                        "src/i18n/locales/ar.json", "package-lock.json"]),
+    ("web-react-next", ["app/[locale]/page.tsx", "app/globals.css",
+                        "messages/ar.json", "package-lock.json"]),
+])
+def test_react_fixture_layout(name, files):
+    root = REPO / "examples/targets" / name
+    for f in files:
+        assert (root / f).is_file(), f
+    for build_dir in ("node_modules", ".next", "dist"):
+        assert not (root / build_dir).exists(), build_dir
+
+
+def test_react_fixture_gaps_are_lint_findings():
+    vite = REPO / "examples/targets/web-react-vite/src/components/Card/Card.module.css"
+    assert sorted(lint_platform("web-react", vite)) == [
+        ("Card.module.css", "hardcoded-color"), ("Card.module.css", "physical-direction")]
+    nxt = REPO / "examples/targets/web-react-next/components/Card.tsx"
+    assert lint_platform("web-react", nxt) == [("Card.tsx", "physical-direction")]
+
+
+@pytest.mark.parametrize("name,src", [("web-react-vite", "src"), ("web-react-next", "components")])
+def test_react_fixture_other_sources_lint_clean(name, src):
+    root = REPO / "examples/targets" / name
+    files = [p for p in (root / src).rglob("*") if p.suffix in (".tsx", ".ts", ".css")
+             and p.name not in ("Card.module.css", "Card.tsx", "tokens.css")
+             and ".test." not in p.name]
+    assert files
+    assert lint_platform("web-react", *files) == []

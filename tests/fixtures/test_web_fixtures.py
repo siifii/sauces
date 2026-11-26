@@ -34,3 +34,13 @@ def run(cwd: Path, *cmd: str) -> bytes:
                              f"{r.stdout.decode(errors='replace')[-4000:]}\n"
                              f"{r.stderr.decode(errors='replace')[-4000:]}")
     return r.stdout
+
+
+@pytest.mark.parametrize("name", ["web-react-vite", "web-react-next"])
+def test_react_fixture_builds(name, tmp_path):
+    app = copy_web(name, tmp_path)
+    run(app, "npm", "ci", "--no-audit", "--no-fund")
+    run(app, "npm", "run", "typecheck")
+    run(app, "npm", "run", "build")
+    if name == "web-react-vite":
+        run(app, "npm", "test")

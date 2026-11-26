@@ -1,0 +1,10 @@
+{
+  "Home": {
+    "title": "Your account",
+    "greeting": "Hello, {name}",
+    "searchLabel": "Search orders",
+    "ordersTitle": "Recent orders",
+    "ordersBody": "{count, plural, one {You have # open order.} other {You have # open orders.}}",
+    "viewOrders": "View orders"
+  }
+}
