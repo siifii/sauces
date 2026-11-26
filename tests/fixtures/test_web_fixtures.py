@@ -78,3 +78,47 @@ def test_web_html_fixture_loads_in_both_directions(tmp_path):
         server.wait()
     assert not (site / "package.json").exists()
     assert not (site / "node_modules").exists()
+
+
+def capture_script(dest: Path) -> Path:
+    """Write the capture script exactly as skills/verify/references/web-capture.md gives it."""
+    import re
+    text = (REPO / "skills/verify/references/web-capture.md").read_text()
+    script = re.search(r"```js\n(.*?)```", text, re.S).group(1)
+    path = dest / "capture.cjs"
+    path.write_text(script)
+    return path
+
+
+def test_capture_matches_frame_size_and_scores(tmp_path):
+    import json
+    import sys
+    import time
+    from PIL import Image
+
+    designs = REPO / "examples" / "designs"
+    script = capture_script(tmp_path)
+    port = free_port()
+    server = subprocess.Popen([sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1"],
+                              cwd=designs, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        time.sleep(1)
+        out = tmp_path / "rendered.png"
+        url = f"http://127.0.0.1:{port}/login-web/src/default.html"
+        stdout = run(tmp_path, "npx", "-y", "-p", PLAYWRIGHT, "-c",
+                     f'NODE_PATH="$(dirname "$(dirname "$(command -v playwright)")")" '
+                     f'node "{script}" "{url}" "{out}" 1440 900 1')
+    finally:
+        server.terminate()
+        server.wait()
+    report = json.loads(stdout.decode().strip().splitlines()[-1])
+    assert report["console_errors"] == [] and report["failed_requests"] == []
+    with Image.open(out) as im:
+        assert im.size == (1440, 900)
+    assert (tmp_path / "full.png").is_file()
+    r = subprocess.run([sys.executable, "-I", str(REPO / "scripts/visual_diff.py"), str(out),
+                        str(REPO / "examples/designs/login-web/login@1440--default.png"),
+                        "--out-dir", str(tmp_path / "diff"), "--threshold", "90"],
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr  # the sample renders itself: must pass
+    assert float(r.stdout.split()[0]) >= 90

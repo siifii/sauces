@@ -1,6 +1,7 @@
 """Web platforms (web-react, web-html): schemas, references, fixtures and wiring."""
 
 import copy
+import re
 import json
 
 import pytest
@@ -203,3 +204,27 @@ def test_build_reference(platform, needles):
     for n in needles:
         assert n in text, n
     assert len(text.split()) < 900
+
+
+def test_web_capture_reference():
+    text = (REPO / "skills/verify/references/web-capture.md").read_text()
+    for needle in ("@playwright/test", "npx -y", "playwright@1.61.1", "python3 -m http.server",
+                   "deviceScaleFactor", "reducedMotion", "document.fonts.ready",
+                   "clip", "full.png", "10%", "Storybook", "manual checklist",
+                   "150 MB", "eval-approve", "narrowest", "not designed, not verified",
+                   "Tab", "notFound()", "rollupOptions", ".sauces/verify/fixtures/",
+                   "package.json", "```js"):
+        assert needle in text, needle
+    for p in ("web-react", "web-html"):
+        ref = (REPO / f"skills/verify/references/{p}.md").read_text()
+        assert "web-capture.md" in ref
+        assert "## Render test" in ref and "## Run" in ref
+    skill = (REPO / "skills/verify/SKILL.md").read_text()
+    assert "web-capture.md" in skill and "not designed, not verified" in skill
+
+
+def test_playwright_pin_matches_tests():
+    text = (REPO / "skills/verify/references/web-capture.md").read_text()
+    fixtures = (REPO / "tests/fixtures/test_web_fixtures.py").read_text()
+    pin = re.search(r"playwright@(\d+\.\d+\.\d+)", text).group(1)
+    assert f'PLAYWRIGHT = "playwright@{pin}"' in fixtures
