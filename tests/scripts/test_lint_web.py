@@ -73,3 +73,57 @@ def test_web_react_token_file_allows_colors(tmp_path):
     r = lint(tmp_path, "src/theme/tokens.css", code + ".x { margin-left: 1px; }\n",
              "--allow-colors", "**/src/theme/**")
     assert rules(r) == [(4, "physical-direction")]
+
+
+# ---------------------------------------------------------------- web-html
+
+@pytest.mark.parametrize("rel,code,expected", [
+    ("index.html", "<h1>Welcome back</h1>", [(1, "hardcoded-string")]),
+    ("index.html", '<input placeholder="Email" data-i18n-attr="aria-label:login.email">',
+     [(1, "hardcoded-string"), (1, "a11y-basic")]),
+    ("index.html", '<p style="color: red">{x}</p>', [(1, "inline-style")]),
+    ("index.html", "<main>\n<section>\n<h1 data-i18n=\"t\">Hi</h1>\n</main>", [(2, "html-parse")]),
+    ("index.html", '<img src="logo.svg">', [(1, "a11y-basic")]),
+    ("index.html", '<div onclick="go()" data-i18n="k">Go</div>', [(1, "a11y-basic")]),
+    ("css/site.css", ".x { padding-right: 2px; color: #B3261E; }",
+     [(1, "hardcoded-color"), (1, "physical-direction")]),
+    ("components/x-card/x-card.js", "this.innerHTML = `\n  <h2>Card title</h2>`;",
+     [(2, "hardcoded-string")]),
+    ("components/x-card/x-card.js", "el.style.color = '#fff';", [(1, "hardcoded-color")]),
+])
+def test_web_html_hits(tmp_path, rel, code, expected):
+    r = lint(tmp_path, rel, code, platform="web-html")
+    assert r.returncode == 1, r.stderr
+    assert sorted(rules(r)) == sorted(expected)
+
+
+@pytest.mark.parametrize("rel,code", [
+    ("index.html", '<h1 data-i18n="login.title">Welcome back</h1>'),
+    ("index.html", '<p data-i18n="k">Hi <b>there</b></p>'),
+    ("index.html", '<input id="e" placeholder="Email" data-i18n-attr="placeholder:login.email">\n'
+                   '<label for="e" data-i18n="login.email">Email</label>'),
+    ("index.html", '<label data-i18n="l">Email <input type="email"></label>'),
+    ("index.html", "<ul><li data-i18n=\"a\">A<li data-i18n=\"b\">B</ul>"),
+    ("index.html", "<p>&nbsp;&copy; 2026</p>"),
+    ("index.html", "<script>const s = 'Sign in';</script><style>.x{color:var(--c)}</style>"),
+    ("index.html", "<!-- <h1>Old</h1> -->"),
+    ("page.njk", "<h1>{{ t('login.title') }}</h1>"),
+    ("Card.astro", "---\nconst { title } = Astro.props;\n---\n<h2>{title}</h2>"),
+    ("index.html", '<img src="d.svg" alt="">'),
+])
+def test_web_html_near_misses(tmp_path, rel, code):
+    r = lint(tmp_path, rel, code, platform="web-html")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert findings(r) == []
+
+
+def test_web_html_ignore_marker(tmp_path):
+    r = lint(tmp_path, "index.html", "<h1>Brand</h1> <!-- sauces-lint-ignore -->",
+             platform="web-html")
+    assert r.returncode == 0, r.stdout
+
+
+def test_web_html_js_template_line_offset(tmp_path):
+    code = "const a = 1;\nconst b = 2;\nel.innerHTML = `<h2>Card title</h2>`;\n"
+    r = lint(tmp_path, "x.js", code, platform="web-html")
+    assert rules(r) == [(3, "hardcoded-string")]
