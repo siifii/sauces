@@ -236,8 +236,17 @@ def score_fixture(root, name, builds_cmd, require_captures=False):
                 and bool(results) and all(r.get("rendered") for r in results)
                 and len(ids) == len(set(ids)) and expected <= set(ids))
     if require_captures:
+        rtl = selected.get("localization", {}).get("rtl", False)
+        narrowest = {}  # web: the RTL pass runs only at each screen's narrowest width
+        for s in screens:
+            if platform in WEB_PLATFORMS and isinstance(s.get("breakpoint"), int):
+                base = s.get("base", s.get("id"))
+                if base not in narrowest or s["breakpoint"] < narrowest[base][0]:
+                    narrowest[base] = (s["breakpoint"], s.get("id"))
+        rtl_screens = {screen_id for _, screen_id in narrowest.values()}
         rendered = rendered and all(
-            has_capture(sauces, result, rtl=selected.get("localization", {}).get("rtl", False))
+            has_capture(sauces, result,
+                        rtl=rtl and (not rtl_screens or result.get("screen") in rtl_screens))
             and result.get("passed") is True and result.get("nondeterministic") is False
             for result in results
         )

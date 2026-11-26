@@ -109,6 +109,28 @@ def test_eval_web_html_default_build_is_html_parse(tmp_path):
     assert [c.strip() for c in rows(r.stdout)[0].strip("|").split("|")][2] == "✗", r.stdout
 
 
+def test_strict_eval_web_needs_rtl_only_at_narrowest_breakpoint(tmp_path):
+    results = make_web_result(tmp_path, (95.0, 95.0))
+    verify = results / "flutter-bloc" / ".sauces" / "verify"
+    summary = json.loads((verify / "summary.json").read_text())
+    png = (REPO / "examples/designs/login/login--default.png").read_bytes()
+    for result in summary["results"]:
+        result.update(rendered=True, nondeterministic=False, passed=True, score=95.0,
+                      iterations=1, rtl_issues=[])
+        capture = verify / result["id"] / "iter-1" / "rendered.png"
+        capture.parent.mkdir(parents=True, exist_ok=True)
+        capture.write_bytes(png)
+        if result["screen"] == "login@390":
+            (verify / result["id"] / "rtl.png").write_bytes(png)
+    (verify / "summary.json").write_text(json.dumps(summary))
+    command = ("--results", str(results), "--fixtures", "flutter-bloc",
+               "--builds-cmd", "true", "--require-captures")
+    verdict = run_script("eval.py", *command)
+    assert verdict.returncode == 0, verdict.stdout + verdict.stderr
+    (verify / "login@390--default" / "rtl.png").unlink()
+    assert run_script("eval.py", *command).returncode == 1
+
+
 def test_eval_create_platform_accepts_web():
     r = run_script("eval.py", "--help")
     assert "web-react" in r.stdout and "web-html" in r.stdout
