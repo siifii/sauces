@@ -248,3 +248,15 @@ def test_scaffold_routes_web():
 def test_report_has_breakpoints_line():
     text = (REPO / "skills/report/SKILL.md").read_text()
     assert "Breakpoints" in text and "not designed, not verified" in text
+
+
+def test_summary_accepts_breakpoint_ids(tmp_path):
+    summary = json.loads((SAMPLE / "verify/summary.json").read_text())
+    summary["platform"] = "web-react"
+    for r in summary["results"]:
+        r["id"] = r["id"].replace("login--", "login@1440--")
+        r["screen"] = "login@1440"
+    r = check("skills/verify/references/summary-schema.json", summary, tmp_path)
+    assert r.returncode == 0, r.stdout
+    summary["results"][0]["id"] = "login@--default"
+    assert check("skills/verify/references/summary-schema.json", summary, tmp_path).returncode == 1
