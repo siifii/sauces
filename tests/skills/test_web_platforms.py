@@ -243,3 +243,8 @@ def test_scaffold_routes_web():
     for needle in ("index.html", "css/tokens.css", "i18n.js", "icons.svg", "no build step",
                    "README", "package.json"):
         assert needle in html, needle
+
+
+def test_report_has_breakpoints_line():
+    text = (REPO / "skills/report/SKILL.md").read_text()
+    assert "Breakpoints" in text and "not designed, not verified" in text

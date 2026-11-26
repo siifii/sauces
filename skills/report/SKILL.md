@@ -42,5 +42,6 @@ The report shows each best practice as followed, flagged or "not checked" from t
 
 1. The path: `.sauces/report.html` (say it is self-contained, opens in any browser and makes no network requests; the graph is inline SVG with its source as text).
 2. One line of headline numbers: screens built, fidelity per state (or "verify not run"), TODO count.
+   For `web-react` and `web-html` add a **Breakpoints** line per screen base (the manifest `base`): the designed widths, which were built, which were verified with their default-state scores, and every `plan.json` `breakpoints[]` width without a design frame as "not designed, not verified". Never present an undesigned width as verified.
 3. **The three most important audit findings**, one line each with the guideline it cites. Rank by severity (`high` > `medium` > `low`), then accessibility before consistency before everything else, then by order in the file. Mention a finding's linked design suggestion and its keep/apply decision if `plan.json` has one. If there are fewer than three findings, list what exists; if there is no audit, say so.
 4. The first next step: an unresolved TODO, an unreadable source, or a state below threshold, whichever comes first.

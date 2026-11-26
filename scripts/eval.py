@@ -8,10 +8,15 @@ a markdown table:
   | fixture | mode | builds | rendered | lint | fidelity(default) | reuse decisions | todos | PASS |
 
   mode               create (scaffolded), follow (existing project) or the profile mode
-  builds             --builds-cmd exits 0 in the project folder
+  builds             --builds-cmd exits 0 in the project folder. Without it: flutter
+                     analyze (flutter); npm ci + npm run build (+ typecheck when the
+                     script exists) (web-react); no html-parse lint finding in the
+                     project's HTML files (web-html)
   rendered           verify rendered every manifest screen state, once each
   lint               lint_generated.py is clean on generated and changed UI source
-  fidelity(default)  verify score of the first screen's default state
+  fidelity(default)  verify score of the first screen's default state; for web
+                     platforms the lowest default-state score across all breakpoint
+                     screens (login@390, login@1440, ...)
   reuse decisions    plan items by decision (reuse / extend / new)
   todos              entries in .sauces/todos.json
   PASS               builds and rendered and lint and fidelity >= 90;
@@ -62,7 +67,11 @@ SOURCE_EXTENSIONS = {
     "kmp-cmp": {".kt"},
     "ios-swiftui": {".swift"},
     "react-native": {".js", ".jsx", ".ts", ".tsx"},
+    "web-react": {".js", ".jsx", ".ts", ".tsx", ".css", ".scss"},
+    "web-html": {".html", ".htm", ".css", ".js", ".mjs", ".njk", ".liquid", ".astro"},
 }
+WEB_PLATFORMS = ("web-react", "web-html")
+
 
 
 def select_project(profile, plan):
@@ -157,6 +166,33 @@ def run_builds(project, cmd):
     return r.returncode == 0
 
 
+def web_react_build_cmd(project):
+    package = load(project / "package.json") if project is not None else None
+    steps = ["npm ci --no-audit --no-fund"]
+    if "typecheck" in ((package or {}).get("scripts") or {}):
+        steps.append("npm run typecheck")
+    steps.append("npm run build")
+    return "sh -c " + shlex.quote(" && ".join(steps))
+
+
+def html_parses(project):
+    """web-html default build check: no html-parse finding in the project's HTML pages."""
+    if project is None or not project.is_dir():
+        return False
+    pages = [str(path) for path in project.rglob("*")
+             if path.suffix in (".html", ".htm") and not set(path.parts) & SKIP_DIRS]
+    if not pages:
+        return False
+    r = subprocess.run(
+        [sys.executable, "-I", str(REPO / "scripts" / "lint_generated.py"),
+         "--platform", "web-html", *pages], capture_output=True, text=True)
+    try:
+        findings = json.loads(r.stdout)["findings"]
+    except (ValueError, KeyError):
+        return False
+    return not any(finding["rule"] == "html-parse" for finding in findings)
+
+
 def score_fixture(root, name, builds_cmd, require_captures=False):
     sauces = root / ".sauces"
     if not sauces.is_dir():
@@ -182,7 +218,12 @@ def score_fixture(root, name, builds_cmd, require_captures=False):
     command = builds_cmd
     if command is None and platform == "flutter":
         command = "flutter analyze --no-fatal-infos --no-fatal-warnings"
-    builds = bool(command) and run_builds(project, command)
+    if command is None and platform == "web-react":
+        command = web_react_build_cmd(project)
+    if command is None and platform == "web-html":
+        builds = html_parses(project)
+    else:
+        builds = bool(command) and run_builds(project, command)
     results = summary.get("results", [])
     manifest = load(sauces / "manifest.json") or {}
     screens = manifest.get("screens", [])
@@ -209,8 +250,13 @@ def score_fixture(root, name, builds_cmd, require_captures=False):
     if missing:
         lint_ok, lint_cell = False, f"✗ {len(missing)} missing"
 
-    default = next((r for r in results if r.get("state") == "default"), None)
-    score = default.get("score") if default else None
+    if platform in WEB_PLATFORMS:
+        defaults = [r.get("score") for r in results if r.get("state") == "default"]
+        score = (min(defaults) if defaults and all(isinstance(x, (int, float)) for x in defaults)
+                 else None)
+    else:
+        default = next((r for r in results if r.get("state") == "default"), None)
+        score = default.get("score") if default else None
     fidelity = f"{score:.1f}" if isinstance(score, (int, float)) else "–"
 
     counts = {}
