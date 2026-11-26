@@ -330,3 +330,16 @@ def test_sample_verify_summary_matches_schema():
     r = run_script("check_json.py", str(REPO / SCHEMAS[4]),
                    str(REPO / "tests" / "data" / "sauces_sample" / "verify" / "summary.json"))
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_if_then_conditional(tmp_path):
+    schema = {"type": "object",
+              "properties": {"p": {"type": "string"}, "b": {"type": "array"}},
+              "if": {"properties": {"p": {"enum": ["web"]}}, "required": ["p"]},
+              "then": {"required": ["b"]}}
+    s = tmp_path / "s.json"
+    s.write_text(json.dumps(schema))
+    for data, code in (({"p": "web"}, 1), ({"p": "web", "b": []}, 0), ({"p": "x"}, 0), ({}, 0)):
+        d = tmp_path / "d.json"
+        d.write_text(json.dumps(data))
+        assert run_script("check_json.py", str(s), str(d)).returncode == code, data

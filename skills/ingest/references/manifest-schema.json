@@ -35,6 +35,24 @@
           },
           "reason": {
             "type": "string"
+          },
+          "viewport": {
+            "type": "object",
+            "description": "The frame's CSS viewport: width in CSS px and device pixel ratio when known (see references/breakpoints.md).",
+            "properties": {
+              "width": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "dpr": {
+                "type": "number",
+                "minimum": 0.5
+              }
+            },
+            "required": [
+              "width"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -93,6 +111,16 @@
                 "source"
               ]
             }
+          },
+          "breakpoint": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Web platforms only: the CSS width this screen was designed at; id is then <base>@<breakpoint>."
+          },
+          "base": {
+            "type": "string",
+            "pattern": "^[^@]+$",
+            "description": "Web platforms only: the screen name without @width."
           }
         },
         "required": [

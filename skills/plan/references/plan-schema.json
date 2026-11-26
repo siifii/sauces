@@ -27,10 +27,12 @@
       "type": "string",
       "enum": [
         "flutter",
-        "android-compose",
         "ios-swiftui",
+        "android-compose",
         "kmp-cmp",
-        "react-native"
+        "react-native",
+        "web-react",
+        "web-html"
       ]
     },
     "project_root": {
@@ -348,6 +350,36 @@
         ],
         "additionalProperties": false
       }
+    },
+    "breakpoints": {
+      "type": "array",
+      "description": "Web platforms only: the widths the build adapts at, min-width ascending. source 'project' = the project's own breakpoints; 'design' = mobile-first at the design's frame widths.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^.+$"
+          },
+          "min_width": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "project",
+              "design"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "min_width",
+          "source"
+        ],
+        "additionalProperties": false
+      }
     }
   },
   "required": [
@@ -360,5 +392,23 @@
     "strings",
     "dependency_changes"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "if": {
+    "properties": {
+      "platform": {
+        "enum": [
+          "web-react",
+          "web-html"
+        ]
+      }
+    },
+    "required": [
+      "platform"
+    ]
+  },
+  "then": {
+    "required": [
+      "breakpoints"
+    ]
+  }
 }
