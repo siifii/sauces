@@ -103,13 +103,14 @@ Suggest adding `.sauces/verify/` to `.gitignore`.
 - **Agents:** `design-analyst` (image → structured layout spec), `component-builder` (one component, one platform), `fidelity-checker` (explains diffs, proposes fixes)
 - **Scripts:** `extract_palette.py`, `visual_diff.py`, `rasterize_pdf.py`, `report_render.py` (fills the HTML template from JSON)
 - **MCP:** none bundled. Figma (official, HTTP) is optional and added by the user.
-- **Platform references:** `android-compose.md`, `ios-swiftui.md`, `kmp-cmp.md`, `flutter.md`, shared by build/verify/scan
+- **Platform references:** `android-compose.md`, `ios-swiftui.md`, `kmp-cmp.md`, `flutter.md`, `react-native.md`, `web-react.md`, `web-html.md`, per skill (scan-project, scaffold, build, verify); web verify also shares `web-capture.md`
 
 ## 7. Non-goals for v0.1
-- Web targets
 - Backend/API wiring
 - Writing back to Figma
 - Animations beyond simple state transitions
+
+The web platforms (`web-react`, `web-html`) were added after v0.1's mobile platforms: see `docs/superpowers/specs/2026-11-26-sauces-web-design.md`.
 
 ## 8. Success metrics (evals)
 - Fidelity score ≥ 90 on the sample set for each platform
