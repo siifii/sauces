@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from conftest import REPO, run_script
+from conftest import REPO, fixture_copy, needs_claude, run_script, run_skill
 
 WEB = ["web-react", "web-html"]
 SAMPLE = REPO / "tests/data/sauces_sample"
@@ -150,3 +150,56 @@ def test_web_html_locales_match():
     ar = json.loads((WEB_HTML / "locales/ar.json").read_text())
     base = lambda d: {k.split(".")[0] if k.endswith((".one", ".other", ".zero", ".two", ".few", ".many")) else k for k in d}
     assert base(en) == base(ar)
+
+
+def test_scan_web_detection_rules():
+    skill = (REPO / "skills/scan-project/SKILL.md").read_text()
+    assert "| `web-react` |" in skill and "| `web-html` |" in skill
+    assert "`react-native`, `web-react`, `web-html`" in skill
+    react = (REPO / "skills/scan-project/references/web-react.md").read_text()
+    for needle in ("react-dom", "next", "vite", "App Router", "Pages Router", "@theme",
+                   "CSS Modules", "next-intl", "react-i18next", "without executing"):
+        assert needle in react, needle
+    # Review Focus 1: RN wins over web-react
+    assert "react-native" in react and "never `web-react`" in react
+    html = (REPO / "skills/scan-project/references/web-html.md").read_text()
+    for needle in ("Eleventy", "Astro", "custom elements", "data-i18n", "Django", "Rails",
+                   "PHP", "WordPress", "unsupported"):
+        assert needle in html, needle
+
+
+@needs_claude
+@pytest.mark.skill
+@pytest.mark.parametrize("name,platform", [("web-react-vite", "web-react"),
+                                           ("web-react-next", "web-react"),
+                                           ("web-html", "web-html")])
+def test_scan_profiles_web_fixture(name, platform, tmp_path):
+    workdir = fixture_copy(name, tmp_path)
+    result = run_skill(workdir, "/sauces:scan-project")
+    path = workdir / ".sauces" / "project-profile.json"
+    assert path.is_file(), result.stdout + result.stderr
+    r = run_script("check_json.py", str(REPO / "skills/scan-project/references/profile-schema.json"),
+                   str(path))
+    assert r.returncode == 0, r.stdout
+    project = json.loads(path.read_text())["projects"][0]
+    assert project["platform"] == platform
+    assert project["localization"]["rtl"] is True
+    assert (workdir / project["root"] / project["theme"]["tokens_source"]).exists()
+
+
+SECTIONS = ["## Tokens", "## Components", "## Responsive", "## Previews and tests", "## Strings",
+            "## Assets", "## State", "## Folders", "## Checks", "## Don't"]
+
+
+@pytest.mark.parametrize("platform,needles", [
+    ("web-react", ["'use client'", "server-compatible", "ms-*", "@theme", "next/image",
+                   "TODO(sauces)", "--platform web-react", "never invent a translation"]),
+    ("web-html", ["light DOM", "data-i18n-attr", "Intl.PluralRules", "<use href",
+                  "no build step", "--platform web-html", "Eleventy", "Astro"]),
+])
+def test_build_reference(platform, needles):
+    text = (REPO / f"skills/build/references/{platform}.md").read_text()
+    assert [s for s in SECTIONS if s in text] == SECTIONS
+    for n in needles:
+        assert n in text, n
+    assert len(text.split()) < 900

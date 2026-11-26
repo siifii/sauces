@@ -25,20 +25,22 @@ Look for marker files at the target root and in each direct child folder (one le
 | `android-compose` | `build.gradle(.kts)` / `settings.gradle(.kts)` with Compose enabled in the root or an included app module (`buildFeatures { compose = true }`, the `org.jetbrains.kotlin.plugin.compose` plugin, or `androidx.compose` dependencies) |
 | `kmp-cmp` | Gradle build with `kotlin("multiplatform")` / `org.jetbrains.kotlin.multiplatform` in the root or an included module, with `org.jetbrains.compose`, shared composables in `src/commonMain`, and at least one mobile target |
 | `react-native` | App package with a runtime `react-native` dependency or an Expo app dependency and a mobile entry point or routes |
+| `web-react` | `package.json` with `react` + `react-dom` and an app entry (Next.js `app/` or `pages/`, Vite `index.html` mounting React, React Router framework mode), and no runtime `react-native`/`expo` |
+| `web-html` | HTML pages, or an Eleventy/Astro config, with no React/Vue/Svelte/Angular app entry |
 
 Then reconcile:
 
 - Resolve candidate roots from their build descriptors and host relationships before classifying. A Flutter project's own host folders (`android/`, `ios/`, `macos/`, `web/`, `linux/`, `windows/` inside the Flutter root, recognisable by `GeneratedPluginRegistrant`, `Flutter/` xcconfigs, or the `dev.flutter.flutter-gradle-plugin` plugin in `settings.gradle(.kts)`; `flutter.sdk` lives in the usually gitignored `local.properties`, so do not rely on it) are part of that Flutter project. Never report them as separate projects.
 - Treat React Native Android and iOS host folders and Expo-generated projects as part of their JS app when build files load React Native or use Expo autolinking. For a JS workspace, inspect packages declared in local workspace metadata for app entry points. Ignore React Native libraries without a runnable app.
 - Likewise, a KMP project's `androidApp/` / `iosApp/` folders belong to the KMP project. Record native UI in them under that one `kmp-cmp` entry.
-- An Android Gradle project without Compose (XML Views only) or an iOS project with only UIKit is not a supported target. Treat it as an unsupported app project.
+- An Android Gradle project without Compose (XML Views only) or an iOS project with only UIKit is not a supported target. Treat it as an unsupported app project. So are Vue/Svelte/Angular apps and server-template or CMS sites (Django, Rails, PHP, WordPress); the web references list the evidence.
 - Backend, cloud-function, tooling and script folders (for example Firebase `functions/`, `backend/`, `server/`, `api/`, `scripts/`, `tools/`, infrastructure code) are not app/UI projects. Ignore them for mode selection and mention them in the summary.
 
 Set `root` to the project folder relative to the target root: `"."` for the root itself, `"flutter"` for a child folder.
 
 ## 2. Set the mode
 
-- `existing`: a supported project was found and none of the ambiguous conditions below apply. List them all in `projects`, ordered by platform: `flutter`, `ios-swiftui`, `android-compose`, `kmp-cmp`, `react-native`.
+- `existing`: a supported project was found and none of the ambiguous conditions below apply. List them all in `projects`, ordered by platform: `flutter`, `ios-swiftui`, `android-compose`, `kmp-cmp`, `react-native`, `web-react`, `web-html`.
 - `empty`: no supported project and no source code at all. A folder with only README/docs, licences, dotfiles or images is empty. Write `projects: []`.
 - `ambiguous`: one of these holds:
   - no supported project was found, but there is source code you cannot classify;
@@ -47,7 +49,7 @@ Set `root` to the project folder relative to the target root: `"."` for the root
 
   Backend, cloud-function, tooling or script folders beside a supported project never make the mode `ambiguous`. Still write every supported project you found to `projects`.
 
-When the mode is `ambiguous`, stop after writing and validating the profile. If the list of supported projects is empty, report the unsupported or unclassified source and stop. Otherwise ask the user which project to target. If `.sauces/eval-approve` exists (eval mode, no human present), do not ask: choose the first project in platform order (`flutter`, `ios-swiftui`, `android-compose`, `kmp-cmp`, `react-native`; break ties by root path), say which one you chose and why in the summary, and keep the profile as written.
+When the mode is `ambiguous`, stop after writing and validating the profile. If the list of supported projects is empty, report the unsupported or unclassified source and stop. Otherwise ask the user which project to target. If `.sauces/eval-approve` exists (eval mode, no human present), do not ask: choose the first project in platform order (`flutter`, `ios-swiftui`, `android-compose`, `kmp-cmp`, `react-native`, `web-react`, `web-html`; break ties by root path), say which one you chose and why in the summary, and keep the profile as written.
 
 When the mode is `empty`, skip steps 3–4, write `{"version": 1, "mode": "empty", "projects": []}`, validate it, and tell the user that `cook` will offer to scaffold a new project.
 
