@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="home.title">Your account</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="components/x-button/x-button.css">
+  <link rel="stylesheet" href="components/x-card/x-card.css">
+  <script type="module" src="components/x-button/x-button.js"></script>
+  <script type="module" src="components/x-card/x-card.js"></script>
+  <script type="module">
+    import { initialLocale, setLocale } from "./i18n.js";
+    setLocale(initialLocale());
+  </script>
+</head>
+<body>
+  <main class="screen">
+    <h1 data-i18n="home.title">Your account</h1>
+    <p data-i18n="home.greeting" data-i18n-args='{"name": "Alex"}'>Hello, Alex</p>
+
+    <div class="field">
+      <label for="search" data-i18n="home.searchLabel">Search orders</label>
+      <span class="field-input">
+        <svg class="icon" aria-hidden="true"><use href="icons.svg#search"></use></svg>
+        <input id="search" type="search">
+      </span>
+    </div>
+
+    <x-card>
+      <h2 data-i18n="home.ordersTitle">Recent orders</h2>
+      <p data-i18n="home.ordersBody" data-i18n-count="2">You have 2 open orders.</p>
+      <x-button><button type="button" data-i18n="home.viewOrders">View orders</button></x-button>
+    </x-card>
+  </main>
+</body>
+</html>

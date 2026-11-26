@@ -44,3 +44,37 @@ def test_react_fixture_builds(name, tmp_path):
     run(app, "npm", "run", "build")
     if name == "web-react-vite":
         run(app, "npm", "test")
+
+
+PLAYWRIGHT = "playwright@1.61.1"
+
+
+def free_port() -> int:
+    import socket
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def test_web_html_fixture_loads_in_both_directions(tmp_path):
+    import sys
+    import time
+    from PIL import Image
+
+    site = REPO / "examples" / "targets" / "web-html"
+    port = free_port()
+    server = subprocess.Popen([sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1"],
+                              cwd=site, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        time.sleep(1)
+        for lang in ("en", "ar"):
+            out = tmp_path / f"{lang}.png"
+            run(tmp_path, "npx", "-y", PLAYWRIGHT, "screenshot", "--viewport-size=390,844",
+                "--wait-for-timeout=500", f"http://127.0.0.1:{port}/?lang={lang}", str(out))
+            with Image.open(out) as im:
+                assert im.size == (390, 844)
+    finally:
+        server.terminate()
+        server.wait()
+    assert not (site / "package.json").exists()
+    assert not (site / "node_modules").exists()

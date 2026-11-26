@@ -117,3 +117,36 @@ def test_react_fixture_other_sources_lint_clean(name, src):
              and ".test." not in p.name]
     assert files
     assert lint_platform("web-react", *files) == []
+
+
+WEB_HTML = REPO / "examples/targets/web-html"
+
+
+def test_web_html_fixture_layout():
+    for f in ("index.html", "css/tokens.css", "css/base.css", "components/x-button/x-button.js",
+              "components/x-button/x-button.css", "components/x-card/x-card.js",
+              "components/x-card/x-card.css", "i18n.js", "locales/en.json", "locales/ar.json",
+              "icons.svg", "README.md"):
+        assert (WEB_HTML / f).is_file(), f
+    assert not (WEB_HTML / "package.json").exists()
+    assert not (WEB_HTML / "node_modules").exists()
+    i18n = (WEB_HTML / "i18n.js").read_text()
+    for needle in ("export async function setLocale", "Intl.PluralRules", "data-i18n-attr",
+                   "lang", "dir"):
+        assert needle in i18n
+
+
+def test_web_html_fixture_is_lint_clean_except_gap():
+    files = sorted(p for p in WEB_HTML.rglob("*") if p.suffix in (".html", ".css", ".js"))
+    r = run_script("lint_generated.py", "--platform", "web-html",
+                   "--allow-colors", "**/css/tokens.css", *map(str, files))
+    found = [(f["file"].split("examples/targets/web-html/")[-1], f["rule"])
+             for f in json.loads(r.stdout)["findings"]]
+    assert found == [("components/x-card/x-card.css", "physical-direction")]
+
+
+def test_web_html_locales_match():
+    en = json.loads((WEB_HTML / "locales/en.json").read_text())
+    ar = json.loads((WEB_HTML / "locales/ar.json").read_text())
+    base = lambda d: {k.split(".")[0] if k.endswith((".one", ".other", ".zero", ".two", ".few", ".many")) else k for k in d}
+    assert base(en) == base(ar)
