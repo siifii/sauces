@@ -1,206 +1,175 @@
 <div align="center">
 
-<img src="assets/icon.png" alt="Sauces" width="128" height="128" />
+<img src="assets/icon.png" alt="Sauces" width="120" height="120" />
 
 # Sauces
 
-**Design in. Production mobile UI out. In *your* project's style.**
+Give it a design. Get mobile UI that fits your app.
 
 *We make the sauce; you make the sandwich.*
 
 [![Claude Code plugin](https://img.shields.io/badge/Claude_Code-plugin-D97757?logo=claude&logoColor=white)](https://code.claude.com/docs/en/plugins)
 [![Version](https://img.shields.io/badge/version-0.1.0-orange)](.claude-plugin/plugin.json)
-[![Status](https://img.shields.io/badge/status-alpha-yellow)](#-status)
+[![Status](https://img.shields.io/badge/status-alpha-yellow)](#status)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-[![Flutter](https://img.shields.io/badge/Flutter-02569B?logo=flutter&logoColor=white)](#-supported-platforms)
-[![Jetpack Compose](https://img.shields.io/badge/Jetpack_Compose-4285F4?logo=jetpackcompose&logoColor=white)](#-supported-platforms)
-[![SwiftUI](https://img.shields.io/badge/SwiftUI-F05138?logo=swift&logoColor=white)](#-supported-platforms)
-[![Compose Multiplatform](https://img.shields.io/badge/Compose_Multiplatform-7F52FF?logo=kotlin&logoColor=white)](#-supported-platforms)
-[![React Native](https://img.shields.io/badge/React_Native-20232A?logo=react&logoColor=61DAFB)](#-supported-platforms)
-
-[Quick start](#-quick-start) · [How it works](#-how-it-works) · [Commands](#-commands) · [Platforms](#-supported-platforms) · [FAQ](#-faq)
+[![Flutter](https://img.shields.io/badge/Flutter-02569B?logo=flutter&logoColor=white)](#what-it-works-with)
+[![Jetpack Compose](https://img.shields.io/badge/Jetpack_Compose-4285F4?logo=jetpackcompose&logoColor=white)](#what-it-works-with)
+[![SwiftUI](https://img.shields.io/badge/SwiftUI-F05138?logo=swift&logoColor=white)](#what-it-works-with)
+[![Compose Multiplatform](https://img.shields.io/badge/Compose_Multiplatform-7F52FF?logo=kotlin&logoColor=white)](#what-it-works-with)
+[![React Native](https://img.shields.io/badge/React_Native-20232A?logo=react&logoColor=61DAFB)](#what-it-works-with)
 
 </div>
 
 ---
 
-Sauces is a [Claude Code](https://code.claude.com) plugin. Hand it a Figma link, screenshots, a PDF of the flow or loose SVG icons. It reads your mobile project first (architecture, theme, components, localization) and then builds the design as **reusable components that look like your team wrote them**. It renders every screen state, scores it against the design, fixes what's off, and finishes with a report you can share.
+Sauces is a plugin for [Claude Code](https://code.claude.com). You give it a design (a Figma link, screenshots, a PDF or some SVG icons) and it builds that screen inside your mobile app.
 
-```text
-/sauces:cook ./designs/login.png ./designs/login-error.png
-```
+It reads your project before writing anything, so the new code uses your architecture, your theme, your components and your translation files. Then it renders every screen state, compares it to the design, fixes what doesn't match, and writes you a report.
 
-```text
-▸ ingest…      ✓ ingest (1 screen, 2 states, 1 icon)
-▸ scan…        ✓ scan (Flutter · BLoC · Material 3 · en, ar)
-▸ plan…        ✓ plan (3 reuse · 1 extend · 2 new · 4 tokens) → waiting for your approval
-▸ build…       ✓ build (6 files, 9 strings in 2 locales)
-▸ verify…      ✓ verify (default 94 · error 92 · rtl 93)
-▸ report…      ✓ report → .sauces/report.html
-```
+## Install
 
-<sub>Illustrative output. Real numbers depend on your design and project.</sub>
-
-## ✨ Why Sauces
-
-Most design-to-code tools assume a clean Figma file and a fresh web app. Real mobile teams have an existing codebase, a half-finished design system and a designer who exported PNGs. Sauces is built for that.
-
-| | |
-|---|---|
-| 🧭 **Follows your architecture** | Detects MVVM, MVI, BLoC, Riverpod, TCA, Hilt, Koin and more, then writes new UI the same way. No new patterns snuck in. |
-| ♻️ **Reuse first** | Every design element maps to **reuse / extend / new / token**. Existing components get optional parameters. Nothing is silently overwritten. |
-| 🌍 **Localization built in** | Every user-facing string goes to your localization files in every locale. Existing keys are reused, RTL layouts are rendered and checked, and icons become project assets. |
-| 🎯 **Visual verification** | Each state is rendered with your project's own test tooling and scored 0–100 against the design, with up to 3 fix rounds. |
-| 🔍 **Design audit** | Measured findings on contrast, touch targets, near-duplicate colors and more, each citing its guideline. You decide per finding whether to keep the design or apply the fix. |
-| 📊 **A report you can share** | A self-contained `report.html` with the component graph, reuse stats, the audit, localization coverage and best-practice notes. |
-| 🖼️ **Any design source** | Figma links, PNG/JPG screenshots, PDFs and SVGs, mixed freely. Anything unreadable is reported, never skipped silently. |
-| 🔒 **Local and opt-in** | All state lives in `.sauces/` in your project. The plugin bundles no MCP server, and Figma is optional. |
-
-## 🚀 Quick start
-
-**1. Install** from inside Claude Code:
+Run these two lines inside Claude Code:
 
 ```text
 /plugin marketplace add siifii/sauces
 /plugin install sauces@sauces
 ```
 
-**2. (Optional) Connect Figma.** Only needed for Figma links. Sauces never adds an MCP server for you:
+You also need Python 3 with Pillow and numpy:
+
+```bash
+python3 -m pip install pillow numpy
+```
+
+## Use it
+
+Open Claude Code in your app's folder and run:
+
+```text
+/sauces:cook ./designs/login.png ./designs/login-error.png
+```
+
+You can mix sources in one go: `https://figma.com/design/...`, `./designs/*.png`, `./flow.pdf`.
+
+Sauces pauses once to show you the plan. Nothing gets written until you approve it. If you stop halfway, run the same command again and it picks up where it left off. If nothing changed, it does nothing.
+
+## What happens when you run it
+
+```text
+ingest → scan → plan → (you approve) → build → verify → report
+```
+
+1. **Ingest** reads your design files.
+2. **Scan** looks at your project: platform, architecture, theme, components, languages.
+3. **Plan** decides, for each piece of the design, whether to reuse an existing component, extend one, make a new one, or turn it into a token (a color, a spacing value, a font).
+4. **Build** writes the code the way your project already does things.
+5. **Verify** renders each state with your project's own test tools and scores it 0 to 100 against the design. Below the threshold, it fixes and tries again, up to 3 times.
+6. **Report** writes `.sauces/report.html`, a single file you can open or share.
+
+It also picks a mode based on your folder:
+
+| Your folder has | Sauces will |
+|---|---|
+| An app it supports (at the root or in a subfolder) | Follow your existing patterns. If it spots a best-practice gap, it suggests a fix, but the default is to leave your code as it is. |
+| Nothing yet (just a README, docs, dotfiles or designs) | Offer to create a new project with the platform's official tools, then build into it. |
+| Several apps, or one it can't figure out | Ask you which one to use. It won't guess. |
+
+## Why it's useful
+
+Most design-to-code tools expect a tidy Figma file and a brand new web app. Most mobile teams have an existing codebase and a designer who sent PNGs. Sauces is made for that case.
+
+- It never quietly overwrites your components. It reuses them, adds optional parameters, or asks you first.
+- Every piece of text goes into your translation files, in every language you have. Existing keys get reused, and right-to-left layouts are rendered and checked too. Icons become real project assets.
+- It audits the design for things like low contrast, tap targets that are too small and colors that are almost the same, and says which guideline each finding comes from. You decide which ones to fix.
+- Anything it can't read gets reported. It never skips a file without telling you.
+
+## Commands
+
+`cook` runs everything. Each step also has its own command if you only want that part:
+
+| Command | What it does |
+|---|---|
+| `/sauces:cook <sources…>` | The whole thing, start to finish |
+| `/sauces:ingest <sources…>` | Read the designs into `.sauces/manifest.json` |
+| `/sauces:scan-project` | Study your project into `.sauces/project-profile.json` |
+| `/sauces:scaffold [flutter\|android\|ios\|kmp\|react-native]` | Create a new project in an empty folder |
+| `/sauces:plan` | Make the plan and wait for your OK |
+| `/sauces:build` | Write the code from the approved plan |
+| `/sauces:verify` | Render, score and fix (3 rounds max) |
+| `/sauces:report` | Write `.sauces/report.html` |
+
+## What it works with
+
+| Platform | UI | Architectures it recognizes | How it checks the result | Scaffold name |
+|---|---|---|---|---|
+| Flutter | Widgets | BLoC/Cubit, Riverpod, Provider, feature-first folders | Flutter widget rendering | `flutter` |
+| Android | Jetpack Compose | MVVM/MVI, Hilt/Koin, Material 3 | Screenshot runner or instrumentation | `android` |
+| iOS | SwiftUI | MVVM/TCA, SPM modules | Snapshot runner or Xcode UI tests | `ios` |
+| Compose Multiplatform | Compose in `commonMain` | Shared vs platform UI, expect/actual | Capture from a mobile host | `kmp` |
+| React Native | Expo or bare | Expo Router, React Navigation, hooks, Zustand, Redux Toolkit | Maestro, Detox or device capture | `react-native` |
+
+Android XML Views and UIKit are recognized but not supported, and Sauces tells you so. For React Native, `/sauces:scaffold react-native` uses Expo; add `--bare` for the Community CLI. Both put the app in `react-native-app/`.
+
+You'll need the usual tools for your platform:
+
+- Flutter needs the Flutter SDK.
+- Android Compose needs the Android SDK, a JDK and the project's Gradle wrapper.
+- SwiftUI needs Xcode on a Mac with an iOS simulator installed.
+- Compose Multiplatform needs the Android and iOS toolchains for each host you want to build.
+- React Native needs Node.js and your package manager, plus the native toolchains for native builds.
+- PDF designs need `pdftoppm` (`brew install poppler` or `apt install poppler-utils`).
+
+If Sauces can't render on your machine, verify gives you a checklist to go through by hand instead of a score.
+
+## Figma (optional)
+
+You only need this for Figma links. Sauces doesn't come with a Figma connection and won't add one for you. If you want it, add the official Figma server yourself:
 
 ```bash
 claude mcp add --transport http figma https://mcp.figma.com/mcp
 ```
 
-or connect the Figma connector on claude.ai. Screenshots, PDFs and SVGs work without it.
+or connect the Figma connector on claude.ai. Without it, Figma links show up as "unreadable" in the summary and report, and screenshots, PDFs and SVGs still work fine.
 
-**3. Cook.** From your app's folder:
+## Settings
 
-```text
-/sauces:cook https://figma.com/design/... ./designs/*.png ./flow.pdf
-```
-
-Sauces stops once, so you can approve the plan before any code is written. Run the same command again and it resumes where it stopped. With nothing changed, it does nothing.
-
-## 🧪 How it works
-
-```mermaid
-flowchart LR
-    A["🖼️ Ingest<br/><sub>Figma · PNG · PDF · SVG</sub>"] --> B["🔎 Scan<br/><sub>architecture · theme · components · l10n</sub>"]
-    B --> C["🗺️ Plan<br/><sub>reuse · extend · new · token</sub>"]
-    C --> H{{"✋ You approve"}}
-    H --> D["🛠️ Build<br/><sub>in your conventions</sub>"]
-    D --> E["🎯 Verify<br/><sub>render · score · fix ×3</sub>"]
-    E --> F["📊 Report<br/><sub>report.html</sub>"]
-    E -. below threshold .-> D
-```
-
-### Three modes, picked automatically
-
-| Your folder | Mode | What happens |
-|---|---|---|
-| 📱 A supported app (at the root or in a child folder) | **Follow** | New UI follows your architecture, state management, theme and folders. Best-practice gaps become optional recommendations (default: keep as is). |
-| 📂 Empty (only README, docs, licenses, dotfiles or designs) | **Create** | Offers to scaffold a project with the platform's official tooling, then builds into it. |
-| 🤔 Several projects, or one Sauces can't classify | **Ask** | Asks which project to target. It never guesses. |
-
-## 🧰 Commands
-
-| Command | What it does |
-|---|---|
-| `/sauces:cook <sources…>` | 🍳 The full pipeline: ingest → scan → plan → build → verify → report |
-| `/sauces:ingest <sources…>` | 🖼️ Normalize design sources into `.sauces/manifest.json` |
-| `/sauces:scan-project` | 🔎 Detect platform, architecture, tokens and components → `.sauces/project-profile.json` |
-| `/sauces:scaffold [flutter\|android\|ios\|kmp\|react-native]` | 🏗️ Create a new project in an empty folder |
-| `/sauces:plan` | 🗺️ Map design to code (reuse / extend / new / token). Stops for your approval |
-| `/sauces:build` | 🛠️ Implement the approved plan in your project's conventions |
-| `/sauces:verify` | 🎯 Render every state, score it against the design, fix loop (max 3) |
-| `/sauces:report` | 📊 Write a self-contained `.sauces/report.html` |
-
-Each stage also runs on its own, so you can re-plan or re-verify without starting over.
-
-## 📱 Supported platforms
-
-| Platform | UI toolkit | Architectures detected | Visual verification | Scaffold |
-|---|---|---|---|---|
-| <img src="https://cdn.simpleicons.org/flutter" width="16" /> **Flutter** | Widgets | BLoC/Cubit, Riverpod, Provider; feature-first folders | Flutter widget rendering | `flutter` |
-| <img src="https://cdn.simpleicons.org/android" width="16" /> **Android** | Jetpack Compose | MVVM/MVI, Hilt/Koin, Material 3 | Screenshot runner or instrumentation | `android` |
-| <img src="https://cdn.simpleicons.org/swift" width="16" /> **iOS** | SwiftUI | MVVM/TCA, SPM modules | Snapshot runner or Xcode UI tests | `ios` |
-| <img src="https://cdn.simpleicons.org/kotlin" width="16" /> **Compose Multiplatform** | Compose in `commonMain` | Shared vs platform UI, expect/actual | Capture from a mobile host | `kmp` |
-| <img src="https://cdn.simpleicons.org/react" width="16" /> **React Native** | Expo or bare | Expo Router / React Navigation; hooks, Zustand, Redux Toolkit | Maestro, Detox or device capture | `react-native` |
-
-Android XML Views and UIKit are detected and reported as unsupported targets. For React Native, `/sauces:scaffold react-native` uses Expo; add `--bare` for the Community CLI. Both create the app in `react-native-app/`.
-
-## ⚙️ Configuration
-
-Everything Sauces writes stays in `.sauces/` in your project. Put settings in `.sauces/config.json`:
+Sauces keeps all its files in a `.sauces/` folder inside your project. To change how strict verify is, put this in `.sauces/config.json`:
 
 ```json
 { "fidelity_threshold": 95 }
 ```
 
-| Key | Default | Meaning |
-|---|---|---|
-| `fidelity_threshold` | `90` | Score (0–100) a state needs before verify stops fixing it |
+The default is 90. You'll probably want to add `.sauces/verify/` (the rendered screenshots) to your `.gitignore`.
 
-Consider adding `.sauces/verify/` (render output) to your `.gitignore`.
+## Privacy
 
-## 📋 Requirements
+Sauces runs inside your Claude Code session. It doesn't bundle any MCP server and doesn't send your code or designs anywhere on its own. Figma data only goes through a Figma server that you connected. When it scaffolds a new project, it uses the platform's official tools (like `flutter create` or `create-expo-app`), and those may download templates and packages.
 
-- **Claude Code** with plugin support
-- **Python 3** with Pillow and numpy: `python3 -m pip install pillow numpy`
+## Status
 
-<details>
-<summary><b>Per platform</b></summary>
+This is an alpha (v0.1). All five platforms have scan, scaffold, build and verify, and Flutter has had the most use. Full end-to-end runs on the native platforms haven't been validated yet, so expect some rough edges. If something breaks, please [open an issue](https://github.com/siifii/sauces/issues).
 
-| For | You need |
-|---|---|
-| Flutter | Flutter SDK |
-| Android Compose | Android SDK, a compatible JDK, the project's Gradle wrapper |
-| SwiftUI | Xcode on macOS with an installed iOS simulator |
-| Compose Multiplatform | The Android and iOS toolchains for each host you build or render |
-| React Native | Node.js and the app's package manager, plus the native toolchains for native builds |
-| PDF inputs | `pdftoppm` (poppler): `brew install poppler` / `apt install poppler-utils` |
-| Figma links | A Figma MCP server you connect yourself (see [Quick start](#-quick-start)) |
+Sauces isn't in the Claude plugin directory. Install it from this repo with the two commands above.
 
-When rendering isn't available, verify falls back to a manual checklist instead of a score.
+## FAQ
 
-</details>
+**Will it overwrite my components?**
+No. It reuses them, extends them with optional parameters, or wraps them, and asks when none of that works. You see every decision in the plan before any code is written.
 
-## 🔒 Privacy
+**Do I need Figma?**
+No. Screenshots, PDFs and SVGs work on their own.
 
-Sauces runs inside your Claude Code session. It bundles no MCP server and sends none of your code or designs anywhere itself. Figma data flows only through a Figma MCP server **you** chose to connect. Scaffolding a new project uses the platform's official tooling (for example `flutter create` or `create-expo-app`), which may download templates and packages. All working files stay in `.sauces/` in your project.
+**My project doesn't follow best practices. Is that a problem?**
+No. Sauces follows what you already have. Anything it would do differently shows up as a suggestion, and the default is "keep as is".
 
-## 🚧 Status
+**Can I run just one step?**
+Yes. Every step has its own command, and `cook` resumes from the last step that finished.
 
-**Alpha (v0.1).** Scan, scaffold, build and verify work for all five targets above, and the Flutter path is the most exercised. Live end-to-end runs on the native targets still need validation. Expect rough edges, and please [open an issue](https://github.com/siifii/sauces/issues) when you hit one.
-
-## ❓ FAQ
+## Development
 
 <details>
-<summary><b>Will it overwrite my components?</b></summary>
-
-No. Sauces reuses, extends (with optional parameters) or wraps existing components, and asks when it can't. The plan shows every decision before any code is written.
-</details>
-
-<details>
-<summary><b>Do I need Figma?</b></summary>
-
-No. Screenshots, PDFs and SVGs work on their own. Figma links need a Figma MCP server you connect yourself. Without one, they're listed as unreadable in the summary and report.
-</details>
-
-<details>
-<summary><b>What if my project doesn't follow best practices?</b></summary>
-
-Sauces follows what's there. Gaps become optional recommendations in the plan and report, defaulting to "keep as is".
-</details>
-
-<details>
-<summary><b>Can I run just one stage?</b></summary>
-
-Yes. Every stage is its own command, and `cook` resumes from the last completed stage.
-</details>
-
-## 🧑‍💻 Development
+<summary>Repo layout, tests and evals</summary>
 
 ```text
 .claude-plugin/   plugin.json, marketplace.json
@@ -220,26 +189,23 @@ claude plugin validate .
 claude --plugin-dir .                    # try your local copy
 ```
 
-<details>
-<summary><b>Evals and mobile parity checks</b></summary>
-
-Evals score full `cook` runs on the fixtures in `examples/targets/`:
+**Evals** score full `cook` runs on the fixtures in `examples/targets/`:
 
 ```bash
 .venv/bin/python scripts/eval.py --run --fixtures flutter-bloc,empty --out eval.md
 ```
 
-`--run` copies each fixture to a temp folder, writes `.sauces/eval-approve` there (the plan is approved automatically, and cook deletes the file when it finishes) and calls `claude` once per fixture. It costs tokens, needs network, and results vary between runs. No passing baseline has been recorded yet. Without `--run`, `eval.py --results <dir>` scores existing runs. A row passes when the project builds, every state rendered, the generated code passes lint, and the default state scores ≥ 90. With `--run`, cook must also exit successfully.
+`--run` copies each fixture to a temp folder, writes `.sauces/eval-approve` there so the plan is approved automatically (cook deletes the file when it's done), and calls `claude` once per fixture. That costs tokens, needs a network connection, and results change from run to run. No passing baseline has been recorded yet. Without `--run`, `eval.py --results <dir>` scores runs you already have. A row passes when the project builds, every state rendered, the generated code passes lint, and the default state scores at least 90. With `--run`, cook also has to exit successfully.
 
-The default tests include a Flutter render-template check when Flutter and the fixture's dependencies are available. Run `flutter pub get` in `examples/targets/flutter-bloc` to enable it.
+The default tests include a Flutter render check when Flutter and the fixture's dependencies are installed. Run `flutter pub get` in `examples/targets/flutter-bloc` to turn it on.
 
-The SDK-backed suite builds the fixtures and fresh starters for Android Compose, SwiftUI and Compose Multiplatform, type-checks and bundles Expo for both platforms, and checks that the bare React Native template generates both native hosts. Set `SAUCES_ANDROID_SERIAL` or `SAUCES_IOS_SIMULATOR` to capture on an already booted test device reserved for the run.
+**Mobile checks.** The SDK-backed suite builds the fixtures and fresh starters for Android Compose, SwiftUI and Compose Multiplatform. It also type-checks and bundles Expo for both platforms, and checks that the bare React Native template creates both native hosts. To capture on a test device that's already booted (and reserved for this run), set `SAUCES_ANDROID_SERIAL` or `SAUCES_IOS_SIMULATOR`.
 
 ```bash
 .venv/bin/pytest -m mobile
 ```
 
-The live evaluator starts a fresh Claude Code pipeline. Run it once per existing fixture, then once per platform with `--fixtures empty --create-platform <platform-id>`, using a fresh results directory each time. Add `--bare` to the React Native create run for the Community CLI template. `--require-captures` requires passing, deterministic captures for every state, plus clean RTL captures when the profile declares RTL support.
+The live evaluator starts a fresh Claude Code pipeline. Run it once for each existing fixture, then once per platform with `--fixtures empty --create-platform <platform-id>`, using a new results folder each time. Add `--bare` to the React Native create run to test the Community CLI template. `--require-captures` requires passing, deterministic captures for every state, plus clean RTL captures when the profile says the app supports RTL.
 
 ```bash
 .venv/bin/python scripts/eval.py --run --fixtures android-compose \
@@ -249,16 +215,14 @@ The live evaluator starts a fresh Claude Code pipeline. Run it once per existing
   --require-captures
 ```
 
-Fixture results show the sample code builds or renders. Live results show whether Sauces can scaffold or modify it and reproduce the design. A live run needs Claude usage credits, platform SDKs and a working device or screenshot runner.
+Fixture results show that the sample code builds or renders. Live results show whether Sauces can scaffold or change it and match the design. A live run needs Claude usage credits, the platform SDKs and a working device or screenshot runner.
 
 </details>
 
-## 🤝 Contributing
+## Contributing
 
-Issues and pull requests are welcome. Read [`docs/superpowers/spec.md`](docs/superpowers/spec.md) and [`docs/superpowers/plan.md`](docs/superpowers/plan.md) first, keep skills as imperative instructions for Claude, and run the tests and `claude plugin validate .` before opening a PR.
+Issues and pull requests are welcome. Before you start, read [`docs/superpowers/spec.md`](docs/superpowers/spec.md) and [`docs/superpowers/plan.md`](docs/superpowers/plan.md). Skills are written as instructions for Claude, so keep them that way. Run the tests and `claude plugin validate .` before you open a PR.
 
-## 📄 License
+## License
 
 [MIT](LICENSE) © 2026 Kareem Alsaifi
-
-<div align="center"><sub>Made with 🥫 for mobile teams who are tired of pixel-pushing.</sub></div>
