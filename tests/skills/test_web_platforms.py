@@ -228,3 +228,18 @@ def test_playwright_pin_matches_tests():
     fixtures = (REPO / "tests/fixtures/test_web_fixtures.py").read_text()
     pin = re.search(r"playwright@(\d+\.\d+\.\d+)", text).group(1)
     assert f'PLAYWRIGHT = "playwright@{pin}"' in fixtures
+
+
+def test_scaffold_routes_web():
+    skill = (REPO / "skills/scaffold/SKILL.md").read_text()
+    for needle in ("`react`", "`html`", "--next", "web-app/", "web-html/",
+                   "react → web-react → web-app/", "html → web-html → web-html/"):
+        assert needle in skill, needle
+    react = (REPO / "skills/scaffold/references/web-react.md").read_text()
+    for needle in ("npm create vite@latest web-app", "react-ts", "react-i18next",
+                   "create-next-app", "next-intl", "CSS Modules", "--help", "README"):
+        assert needle in react, needle
+    html = (REPO / "skills/scaffold/references/web-html.md").read_text()
+    for needle in ("index.html", "css/tokens.css", "i18n.js", "icons.svg", "no build step",
+                   "README", "package.json"):
+        assert needle in html, needle

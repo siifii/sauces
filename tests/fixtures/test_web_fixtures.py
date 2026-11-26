@@ -122,3 +122,12 @@ def test_capture_matches_frame_size_and_scores(tmp_path):
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stdout + r.stderr  # the sample renders itself: must pass
     assert float(r.stdout.split()[0]) >= 90
+
+
+CREATE_VITE = "create-vite@9.4.0"
+
+
+def test_vite_template_builds(tmp_path):
+    run(tmp_path, "npx", "-y", CREATE_VITE, "web-app", "--template", "react-ts", "--no-interactive")
+    run(tmp_path / "web-app", "npm", "install", "--no-audit", "--no-fund")
+    run(tmp_path / "web-app", "npm", "run", "build")

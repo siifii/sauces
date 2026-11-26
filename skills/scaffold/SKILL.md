@@ -2,7 +2,7 @@
 name: scaffold
 description: >-
   This skill should be used when the user asks to "create a new app", "scaffold a project", "start a new Flutter app", "set up a project from scratch", "I don't have a project yet", or runs "/sauces:scaffold". Creates a new project in an empty folder (create mode) with the official tooling, then adds Sauces' structure: the chosen design-system folders, a platform theme, localized resources, seedable state and test support.
-argument-hint: "[flutter|ios|android|kmp|react-native ...] [--org <reverse.domain>] [--name <project_name>] [--bare]"
+argument-hint: "[flutter|ios|android|kmp|react-native|react|html ...] [--org <reverse.domain>] [--name <project_name>] [--bare] [--next]"
 ---
 
 # Scaffold
@@ -11,17 +11,17 @@ Create a new, buildable project for the design in an empty folder, so the rest o
 
 ## Hard rules
 
-- The target root is the current working directory. Each platform gets a sibling folder under it (`flutter/`, `ios/`, `android/`, `kmp/`, `react-native-app/`), with one shared `.sauces/` at the root.
+- The target root is the current working directory. Each platform gets a sibling folder under it (`flutter/`, `ios/`, `android/`, `kmp/`, `react-native-app/`, `web-app/`, `web-html/`), with one shared `.sauces/` at the root.
 - Never create, change or delete anything outside the new platform folder and `.sauces/`. Never modify a file that existed before scaffold ran, except Sauces' own `.sauces/` state (the files the steps below name).
 - Use the platform reference and official creation tooling. Use a bundled overlay where the reference provides one. Preserve template dependency versions and resolve additions through the platform tool.
 - Eval mode (`.sauces/eval-approve` exists): never ask. Take every default marked (Recommended) and refuse a non-empty folder (step 2 gives the exact wording).
 
 ## 1. Platforms
 
-Parse `$ARGUMENTS`: platform words (`flutter`, `ios`, `android`, `kmp`, `react-native`), `--org <org>`, `--name <name>` and `--bare` (React Native only, to use the Community CLI).
+Parse `$ARGUMENTS`: platform words (`flutter`, `ios`, `android`, `kmp`, `react-native`, `react` or `web`, `html`), `--org <org>`, `--name <name>`, `--bare` (React Native only, to use the Community CLI) and `--next` (web-react only, Next.js instead of Vite).
 
-- No platform given: ask which to create, offering `Flutter (Recommended)`, `iOS (SwiftUI)`, `Android (Compose)`, `Kotlin/Compose Multiplatform` and `React Native (Expo)`, several allowed. In eval mode with no explicit platform, use the platform ID in .sauces/eval-scaffold.json when present (translate it to the corresponding scaffold argument); otherwise use Flutter. Honor `bare: true` from that file only with React Native. Explicit platform and template flags still apply.
-- Map argument → platform reference ID → destination: `flutter → flutter → flutter/`, `ios → ios-swiftui → ios/`, `android → android-compose → android/`, `kmp → kmp-cmp → kmp/`, `react-native → react-native → react-native-app/`. Deduplicate selections and reject unknown arguments before writing. Reject --bare unless React Native is selected.
+- No platform given: ask which to create, offering `Flutter (Recommended)`, `iOS (SwiftUI)`, `Android (Compose)`, `Kotlin/Compose Multiplatform`, `React Native (Expo)`, `Web: React (Vite)` and `Web: HTML/CSS (no build)`, several allowed. In eval mode with no explicit platform, use the platform ID in .sauces/eval-scaffold.json when present (translate it to the corresponding scaffold argument); otherwise use Flutter. Honor `bare: true` from that file only with React Native. Explicit platform and template flags still apply.
+- Map argument → platform reference ID → destination: `flutter → flutter → flutter/`, `ios → ios-swiftui → ios/`, `android → android-compose → android/`, `kmp → kmp-cmp → kmp/`, `react-native → react-native → react-native-app/`, `react → web-react → web-app/` (`web` is a synonym), `html → web-html → web-html/`. Deduplicate selections and reject unknown arguments before writing. Reject --bare unless React Native is selected, and --next unless web-react is selected. Follow the web references in order, like React Native in step 4; they skip the org question (web has no bundle ID).
 
 ## 2. Check the folder is empty
 
