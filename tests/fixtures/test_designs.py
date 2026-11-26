@@ -54,3 +54,23 @@ def test_dominant_color_is_brand():
     assert non_white
     delta = np.linalg.norm(_lab(non_white[0]["hex"]) - _lab("#3D5AFE"))
     assert delta <= 5, (non_white[0], delta)
+
+
+LOGIN_WEB = REPO / "examples" / "designs" / "login-web"
+
+
+def test_login_web_design_files():
+    for state in STATES:
+        with Image.open(LOGIN_WEB / f"login@390--{state}.png") as im:
+            assert im.size == (780, 1688)
+        with Image.open(LOGIN_WEB / f"login@1440--{state}.png") as im:
+            assert im.size == (1440, 900)
+        mobile = np.asarray(Image.open(LOGIN / f"login--{state}.png").convert("RGB"))
+        copy = np.asarray(Image.open(LOGIN_WEB / f"login@390--{state}.png").convert("RGB"))
+        assert np.array_equal(mobile, copy), state
+    text = (LOGIN_WEB / "description.md").read_text()
+    for copy in ("Welcome back", "Email", "Password", "Forgot password?", "Sign in",
+                 "Incorrect email or password", "1440", "390"):
+        assert copy in text
+    # the mobile sample is untouched
+    assert sorted(p.name for p in LOGIN.glob("*.png")) == sorted(p.name for p in PNGS)
