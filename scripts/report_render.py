@@ -356,7 +356,7 @@ def section_fidelity(inputs) -> str:
     shots = []
     for r in results(inputs):
         rid = str(r.get("id", ""))
-        safe_id = rid if re.fullmatch(r"[A-Za-z0-9_-]+", rid) else None
+        safe_id = rid if re.fullmatch(r"[A-Za-z0-9_-]+(?:@[0-9]+--[A-Za-z0-9_-]+)?", rid) else None
         devs = string_list(r.get("deviations"))
         if r.get("rendered") and safe_id:
             n = r.get("iterations") or 1

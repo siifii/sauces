@@ -265,3 +265,20 @@ def test_report_uses_selected_root_when_projects_share_a_platform(tmp_path):
     html = render(sauces, tmp_path)
     assert "selected-app-architecture" in html
     assert "first-app-architecture" not in html
+
+
+def test_fidelity_shows_web_breakpoint_states(tmp_path):
+    sauces = tmp_path / ".sauces"
+    shutil.copytree(SAMPLE, sauces)
+    summary_path = sauces / "verify" / "summary.json"
+    summary = json.loads(summary_path.read_text())
+    for r in summary["results"]:
+        old = sauces / "verify" / r["id"]
+        r["id"] = r["id"].replace("login--", "login@1440--")
+        if old.is_dir():
+            old.rename(sauces / "verify" / r["id"])
+    summary_path.write_text(json.dumps(summary))
+    fidelity = section(render(sauces, tmp_path), "fidelity")
+    assert "login@1440--default" in fidelity
+    assert "Not rendered" not in fidelity
+    assert "data:image/png;base64," in fidelity
