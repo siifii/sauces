@@ -1,0 +1,121 @@
+{
+  "$schema": "design-diff schema (Sauces check_json.py subset)",
+  "description": "Validates design-diff.json produced by scripts/design_diff.py",
+  "type": "object",
+  "required": ["states", "tokens", "copy", "assets", "summary"],
+  "properties": {
+    "states": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "status", "reason"],
+        "properties": {
+          "id": {"type": "string"},
+          "status": {"type": "string", "enum": ["added", "removed", "changed", "unchanged"]},
+          "reason": {"type": "string"}
+        }
+      }
+    },
+    "tokens": {
+      "type": "object",
+      "required": ["colors", "typography", "spacing", "radii"],
+      "properties": {
+        "colors": {
+          "type": "object",
+          "required": ["added", "removed", "changed"],
+          "properties": {
+            "added": {"type": "array"},
+            "removed": {"type": "array"},
+            "changed": {"type": "array"}
+          }
+        },
+        "typography": {
+          "type": "object",
+          "required": ["added", "removed", "changed"],
+          "properties": {
+            "added": {"type": "array"},
+            "removed": {"type": "array"},
+            "changed": {"type": "array"}
+          }
+        },
+        "spacing": {
+          "type": "object",
+          "required": ["added", "removed", "changed"],
+          "properties": {
+            "added": {"type": "array"},
+            "removed": {"type": "array"},
+            "changed": {"type": "array"}
+          }
+        },
+        "radii": {
+          "type": "object",
+          "required": ["added", "removed", "changed"],
+          "properties": {
+            "added": {"type": "array"},
+            "removed": {"type": "array"},
+            "changed": {"type": "array"}
+          }
+        }
+      }
+    },
+    "copy": {
+      "type": "object",
+      "required": ["added", "removed", "changed"],
+      "properties": {
+        "added": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["state", "text"],
+            "properties": {
+              "state": {"type": "string"},
+              "text": {"type": "string"}
+            }
+          }
+        },
+        "removed": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["state", "text"],
+            "properties": {
+              "state": {"type": "string"},
+              "text": {"type": "string"}
+            }
+          }
+        },
+        "changed": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["state", "old", "new"],
+            "properties": {
+              "state": {"type": "string"},
+              "old": {"type": "string"},
+              "new": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "required": ["added", "removed", "changed"],
+      "properties": {
+        "added": {"type": "array"},
+        "removed": {"type": "array"},
+        "changed": {"type": "array"}
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["changed", "added", "removed", "unchanged"],
+      "properties": {
+        "changed": {"type": "number"},
+        "added": {"type": "number"},
+        "removed": {"type": "number"},
+        "unchanged": {"type": "number"}
+      }
+    }
+  }
+}
