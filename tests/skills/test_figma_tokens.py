@@ -21,6 +21,21 @@ def check(path):
     return run_script("check_json.py", str(SCHEMA), str(path)).returncode
 
 
+def read(rel):
+    return (REPO / rel).read_text()
+
+
+def test_references_describe_figma_tokens():
+    figma = read("skills/ingest/references/figma.md")
+    for needle in ("alias_of", "modes.dark", "source.kind", "style", "never snap", "Never invent"):
+        assert needle in figma, needle
+    matching = read("skills/plan/references/matching.md")
+    for needle in ("Figma token name", "source.name", "recommendation"):
+        assert needle in matching, needle
+    assert "figma.md" in read("skills/ingest/SKILL.md")
+    assert "modes.dark" in read("skills/plan/references/dark-mode.md")
+
+
 def test_schema_accepts_figma_tokens(tmp_path):
     assert check(manifest_with(json.loads(TOKENS.read_text()), tmp_path)) == 0
 

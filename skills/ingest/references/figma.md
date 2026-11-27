@@ -47,13 +47,16 @@ A PNG export of a frame also given in the arguments is a duplicate (SKILL.md §3
 
 ## 4. Variables into tokens
 
-Call `get_variable_defs` on each frame (or the parent node once). It returns names mapped to values. Merge them:
+Call `get_variable_defs` on each frame (or the parent node once). Also read styles (text, color) when `get_design_context` or another returned result lists them; skip what no tool returned. Merge:
 
-- Color variables (`#RRGGBB`, or `#RRGGBBAA` with alpha `FF`) → `tokens.colors {hex, name: <variable name in kebab-case, e.g. color/primary → primary>, origin: "figma"}`. Drop extracted colors within ΔE 3 of a Figma color.
-- Number variables named like spacing/gap/padding → `tokens.spacing`; radius/corner → `tokens.radii`. Figma values are intentional: keep them as they are, do not snap them.
-- Text styles (font family, size, weight, line height) → `tokens.typography`, named from the style name (`Title/Large` → `title-large`).
+- **Colors:** `#RRGGBB` (or `#RRGGBBAA` with alpha `FF`) → `tokens.colors {hex, name: <variable name, kebab-case, last segment kept when the path adds no meaning: color/primary → primary>, origin: "figma", source: {kind: "variable", name: <Figma name as returned>, collection?, id?, node?}}`. `source.kind` is `variable` or `style`. Drop extracted colors within ΔE 3 of a Figma color.
+- **Aliases:** resolve alias chains. The semantic variable keeps its name and records `source.alias_of` (the primitive's Figma name). Add the primitive as its own token only when a frame uses it directly.
+- **Modes:** for a variable with several modes, the default (Light) value goes in `hex`; a mode named Dark, or clearly dark by luminance as in `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/dark-mode.md`, goes in `modes.dark`. Never invent a dark value the file does not hold.
+- **Numbers:** spacing/gap/padding variables → `tokens.spacing`, radius/corner → `tokens.radii`, each as `{value, name, origin: "figma", source}`. Plain numbers stay valid for sampled values. Figma values are intentional: never snap them.
+- **Typography:** text styles (family, size, weight, line height) → `tokens.typography {name: <style name kebab-case, Title/Large → title-large>, …, origin: "figma", source: {kind: "style", name}}`.
+- **Styles vs variables:** a variable and a style with the same value and role: keep the variable.
 
-Record the source with `status: ok` and, when only part of it was usable, a `reason` saying which frames were skipped and why.
+Record the source with `status: ok` and, when only part of it was usable, a `reason` saying which frames or kinds (variables, styles) were skipped and why.
 
 ## 5. Design-system signals
 

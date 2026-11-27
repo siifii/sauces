@@ -7,7 +7,7 @@ Dark mode is an **appearance** of a screen state, not a different state. A dark 
 - A frame is dark when its name says so (`-dark`, `_dark`, `dark/` folder, a Figma page or frame named Dark) or, failing that, when its background is dark (mean luminance under about 20%) and its layout matches a light frame of the same screen (same text, same structure).
 - Pair it with the light frame of the same screen and state: id `<state>-dark`, `name` the light state's name (`default`, `error`…), `appearance: "dark"`, reference `.sauces/references/<screen>--<state>-dark.png`. Light and dark frames are **never duplicates** of each other.
 - A dark frame with no light twin is still `<state>-dark`; say in its `reason` that the light version was not designed.
-- Tokens: record dark colors as the dark value of the same token (`surface` light `#FFFFFF`, dark `#1B1B1F`), never as new unrelated tokens, and never invent a dark value the design does not show.
+- Tokens: record dark colors as the dark value of the same token (`surface` light `#FFFFFF`, dark `#1B1B1F`), never as new unrelated tokens, and never invent a dark value the design does not show. From Figma, a variable's Dark mode value is `modes.dark` on the color token (see `figma.md`).
 
 ## Plan
 
