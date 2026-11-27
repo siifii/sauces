@@ -690,9 +690,15 @@ def section_audit(inputs) -> str:
     if isinstance(inputs.manifest, dict):
         colors = list_of((inputs.manifest.get("tokens") or {}).get("colors"))
         if colors:
+            figma = sum(1 for c in colors if c.get("origin") == "figma")
+            def label(c):
+                src = c.get("source") if isinstance(c.get("source"), dict) else {}
+                name = e(c.get("name") or "unnamed")
+                return f"{name} ← {e(src['name'])}" if src.get("name") else name
             sw = "".join(f'<div class="swatch">{chip(c.get("hex"))}<div><strong>{e(c.get("hex"))}</strong>'
-                         f'<div class="muted">{e(c.get("name") or "unnamed")}</div></div></div>' for c in colors)
-            parts.append(f'<h3>Palette</h3><div class="swatches">{sw}</div>')
+                         f'<div class="muted">{label(c)}</div></div></div>' for c in colors)
+            parts.append(f'<h3>Palette</h3><p class="muted">{figma} of {len(colors)} colors from Figma, '
+                         f'{len(colors) - figma} sampled from pixels.</p><div class="swatches">{sw}</div>')
     parts.append("<h3>Measured findings</h3>")
     if not isinstance(inputs.audit, dict):
         parts.append(not_run("design-audit.json", "plan"))

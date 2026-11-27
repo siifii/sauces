@@ -38,7 +38,7 @@ python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/sauces_state.py" mark report
 
 ## 3. Summarize in chat
 
-The report shows each best practice as followed, flagged or "not checked" from the run's evidence; never describe an unchecked one as followed. Read `.sauces/design-audit.json`, `.sauces/verify/summary.json` and `.sauces/todos.json` (skip any that are missing) and reply in at most ~120 words:
+The report shows each best practice as followed, flagged or "not checked" from the run's evidence; never describe an unchecked one as followed. The palette lists each color's Figma name when it came from a Figma variable, and how many colors came from Figma versus pixels. Read `.sauces/design-audit.json`, `.sauces/verify/summary.json` and `.sauces/todos.json` (skip any that are missing) and reply in at most ~120 words:
 
 1. The path: `.sauces/report.html` (say it is self-contained, opens in any browser and makes no network requests; the graph is inline SVG with its source as text).
 2. One line of headline numbers: screens built, fidelity per state (or "verify not run"), TODO count.

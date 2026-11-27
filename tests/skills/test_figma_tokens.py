@@ -40,6 +40,22 @@ def test_schema_accepts_figma_tokens(tmp_path):
     assert check(manifest_with(json.loads(TOKENS.read_text()), tmp_path)) == 0
 
 
+def test_report_shows_token_sources(tmp_path):
+    import shutil
+    d = tmp_path / "s"
+    shutil.copytree(SAMPLE, d)
+    manifest = json.loads((d / "manifest.json").read_text())
+    manifest["tokens"] = json.loads(TOKENS.read_text())
+    (d / "manifest.json").write_text(json.dumps(manifest))
+    out = tmp_path / "r.html"
+    result = run_script("report_render.py", "--sauces-dir", str(d), "-o", str(out))
+    assert result.returncode == 0, result.stderr
+    html = out.read_text()
+    assert "Brand/Primary" in html
+    assert "2 of 3 colors from Figma" in html
+    assert "sampled from pixels" in html
+
+
 def test_schema_rejects_bad_source_and_modes(tmp_path):
     base = json.loads(TOKENS.read_text())
     bad = copy.deepcopy(base)
