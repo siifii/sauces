@@ -30,6 +30,8 @@ python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/report_render.py" --sauces-dir .sauces
 
 Pass `--allow-cdn` only if the user asks for the mermaid-drawn graph; it loads one pinned, SRI-checked script from a CDN and stays off by default.
 
+When `.sauces/design-diff.json` exists the report opens with a "What changed" section: changed, added, removed and unchanged states, copy and token changes, and the re-verified score of each unchanged state.
+
 Then record it:
 
 ```bash

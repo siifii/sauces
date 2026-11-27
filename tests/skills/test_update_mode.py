@@ -1,5 +1,6 @@
 """Update mode: cook snapshot, plan carry-over, build skipping."""
 import json
+import shutil
 
 from conftest import REPO, run_script
 
@@ -37,3 +38,32 @@ def test_plan_schema_accepts_update_fields(tmp_path):
     plan["items"][0]["update"] = "stale"
     path.write_text(json.dumps(plan))
     assert run_script("check_json.py", str(schema), str(path)).returncode == 1
+
+
+def test_report_shows_what_changed(tmp_path):
+    d = tmp_path / "s"
+    shutil.copytree(REPO / "tests/data/sauces_sample", d)
+    (d / "design-diff.json").write_text(json.dumps({
+        "states": [
+            {"id": "login--default", "status": "changed", "reason": "3.05% pixel difference"},
+            {"id": "login--error", "status": "unchanged", "reason": "0.00% pixel difference"},
+            {"id": "login--old", "status": "removed", "reason": "state is not in the new design"}],
+        "tokens": {k: {"added": [], "removed": [], "changed": []} for k in ("colors", "typography", "spacing", "radii")},
+        "copy": {"added": [], "removed": [], "changed": [{"state": "login--default", "old": "Sign in", "new": "Log in"}]},
+        "assets": {"added": [], "removed": [], "changed": []},
+        "summary": {"changed": 1, "added": 0, "removed": 1, "unchanged": 1}}))
+    out = tmp_path / "r.html"
+    result = run_script("report_render.py", "--sauces-dir", str(d), "-o", str(out))
+    assert result.returncode == 0, result.stderr
+    html = out.read_text()
+    assert 'id="changes"' in html and "What changed" in html
+    assert "3.05% pixel difference" in html
+    assert "Sign in" in html and "Log in" in html
+    assert "re-verified" in html
+
+
+def test_report_without_diff_has_no_changes_section(tmp_path):
+    out = tmp_path / "r.html"
+    assert run_script("report_render.py", "--sauces-dir", str(REPO / "tests/data/sauces_sample"),
+                      "-o", str(out)).returncode == 0
+    assert 'id="changes"' not in out.read_text()

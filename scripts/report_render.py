@@ -105,6 +105,7 @@ class Inputs:
         self.deviations = self._load("deviations.json", list)
         self.verify = self._load("verify/summary.json", dict)
         self.lint = self._load("lint.json", dict)
+        self.design_diff = self._load("design-diff.json", dict)
         plan_md = sauces / "plan.md"
         self.plan_md = plan_md.read_text(encoding="utf-8", errors="replace") if plan_md.is_file() else None
 
@@ -745,6 +746,39 @@ def section_audit(inputs) -> str:
     return "".join(parts)
 
 
+def section_changes(inputs) -> str:
+    """The update-run panel; empty (so the section is omitted) without design-diff.json."""
+    data = inputs.design_diff
+    if not isinstance(data, dict):
+        return ""
+    scores = {r.get("id"): r for r in list_of((inputs.verify or {}).get("results")) if isinstance(r, dict)}
+    kinds = {"changed": "extend", "added": "new", "removed": "token", "unchanged": "reuse"}
+    rows = []
+    for s in list_of(data.get("states")):
+        status = s.get("status")
+        score = scores.get(s.get("id"), {}).get("score")
+        verified = f"re-verified: {fmt_score(score)}" if status == "unchanged" and score is not None else ""
+        rows.append([f"<code>{e(s.get('id'))}</code>", badge(str(status), kinds.get(status)),
+                     e(s.get("reason", "")), verified])
+    summary = data.get("summary") if isinstance(data.get("summary"), dict) else {}
+    cards = "".join(card(summary.get(k, 0), k) for k in ("changed", "added", "removed", "unchanged"))
+    html = f'<div class="cards">{cards}</div>' + table(["State", "Status", "Why", ""], rows)
+    copy = data.get("copy") if isinstance(data.get("copy"), dict) else {}
+    changed_copy = [c for c in list_of(copy.get("changed")) if isinstance(c, dict)]
+    if changed_copy:
+        html += "<h3>Copy changes</h3><ul>" + "".join(
+            f"<li><code>{e(c.get('state'))}</code>: {e(c.get('old'))} → {e(c.get('new'))}</li>"
+            for c in changed_copy) + "</ul>"
+    tokens = data.get("tokens") if isinstance(data.get("tokens"), dict) else {}
+    token_bits = [f"{k}: {len(list_of(v.get('added')))} added, {len(list_of(v.get('removed')))} removed, "
+                  f"{len(list_of(v.get('changed')))} changed"
+                  for k, v in tokens.items() if isinstance(v, dict)
+                  and any(list_of(v.get(x)) for x in ("added", "removed", "changed"))]
+    if token_bits:
+        html += "<h3>Token changes</h3><ul>" + "".join(f"<li>{e(b)}</li>" for b in token_bits) + "</ul>"
+    return html
+
+
 def section_files(inputs) -> str:
     if inputs.state is None:
         return not_run("state.json", "build")
@@ -915,10 +949,19 @@ def mermaid_script() -> str:
 def render(inputs, template: str, allow_cdn: bool = False) -> str:
     title, sub = heading(inputs)
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    changes = section_changes(inputs)
+    changes_section = (
+        '<section id="changes"><h2>What changed</h2>'
+        '<p class="lead">This run updated an earlier build: only the changed parts were planned '
+        f"and built; every state was verified again.</p>{changes}</section>" if changes else ""
+    )
+    changes_nav = '<a href="#changes">What changed</a>' if changes else ""
     values = {
         "title": e(f"Sauces report: {title}"),
         "heading": e(title),
         "subheading": e(sub),
+        "changes_section": changes_section,
+        "changes_nav": changes_nav,
         "summary": section_summary(inputs),
         "fidelity": section_fidelity(inputs),
         "design_system": section_design_system(inputs),
