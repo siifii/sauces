@@ -269,3 +269,23 @@ def test_pseudo_locale_reference_covers_every_platform():
         assert f"**{platform}" in text or f"/ {platform}" in text, platform
     assert "pseudo_locale.py" in text and "pseudo_issues" in text
     assert "pseudo-locale.md" in (REPO / "skills/verify/SKILL.md").read_text()
+
+
+def test_translate_skill_contract():
+    text = (REPO / "skills/translate/SKILL.md").read_text()
+    assert text.startswith("---\nname: translate\n")
+    for needle in ("/sauces:translate", "i18n_check.py", "needs_review", "x-sauces-review",
+                   "translatable=\"false\"", "eval-approve", "translations.json", "todos.json",
+                   "zero, one, two, few, many, other"):
+        assert needle in text, needle
+    assert len(text.split()) < 2000
+    assert "/sauces:translate" in (REPO / "README.md").read_text()
+
+
+def test_lite_mode_is_wired_through_cook_ingest_verify():
+    cook = (REPO / "skills/cook/SKILL.md").read_text()
+    assert "--lite" in cook and ".sauces/lite" in cook
+    verify = (REPO / "skills/verify/SKILL.md").read_text()
+    assert ".sauces/lite" in verify and '"lite": true' in verify
+    assert ".sauces/lite" in (REPO / "skills/ingest/references/breakpoints.md").read_text()
+    assert "--lite" in (REPO / "README.md").read_text()

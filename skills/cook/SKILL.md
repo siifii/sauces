@@ -1,7 +1,7 @@
 ---
 name: cook
 description: This skill should be used when the user asks to "cook", "implement this design", "turn this Figma into code", "build these screens from the design", "design to code", or runs "/sauces:cook" with Figma links, PNG/JPG screenshots, PDFs or SVGs. Runs the full Sauces pipeline (ingest, scan, plan, build, verify, report) against the current mobile project, resumes where it stopped, and creates a project first when the folder is empty.
-argument-hint: <figma-url | file | folder | glob>...
+argument-hint: "[--lite] <figma-url | file | folder | glob>..."
 ---
 
 # Cook
@@ -19,6 +19,7 @@ Run the whole pipeline on the design sources in `$ARGUMENTS`: ingest → scan-pr
 
 ## 1. Sources and resume point
 
+0. **Lite run.** If `$ARGUMENTS` contains `--lite`, remove it from the arguments and create `.sauces/lite` (empty). It makes this run cheaper: web screens keep only their narrowest frame, and verify skips the determinism pass, the pseudo-locale pass and all but one fix round. Like `eval-approve`, the file is for this run only: delete it with `rm -f .sauces/lite` as the very last action of this cook run, whatever the outcome, and say "Lite run" in the final reply with what was skipped.
 1. Split `$ARGUMENTS` into Figma links (`https://…figma.com/…`) and local paths (files, folders, globs; expand globs; quote paths with spaces). With arguments, write them to `.sauces/cook-sources.json` as a JSON array of strings, exactly as given (only when the file is missing or holds a different list, so an unchanged rerun writes nothing). With no arguments, take the list from `.sauces/cook-sources.json`, so the hash below stays the same; if it is missing, say: "Give me the design: `/sauces:cook <figma-url | file | folder>...`" and stop.
 2. Hash the local sources. Missing paths are a usage error: name them and stop.
 

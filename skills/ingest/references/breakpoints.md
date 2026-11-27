@@ -24,4 +24,6 @@ Then decide by the target platform. Read it from `.sauces/project-profile.json` 
 - **`web-react` or `web-html`:** make one screen per width. Its `id` is `<base>@<width>` (e.g. `login@390`, `login@1440`); set `base` to the screen name without `@` and `breakpoint` to the width. State IDs stay `<screen-id>--<state>` (`login@1440--error`), and reference files follow them (`.sauces/references/login@1440--error.png`). A screen designed at one width only still gets the `@<width>` suffix.
 - **Every other platform:** keep one frame per state: the one closest to the target device width, which in practice is the **narrowest** frame (phone widths are under 500 CSS px). Never pick the 1440 frame because it has more pixels. Record the frames you dropped in the kept source's `reason` (e.g. `"also designed at 1440; mobile target keeps 390"`). Do not set `base` or `breakpoint`.
 
+**Lite run** (`.sauces/lite` exists): for web platforms too, keep only the narrowest frame per state (still named `<base>@<width>`) and record the dropped widths in the kept source's `reason`; report lists them as not verified.
+
 When no platform is known yet (ingest ran before scan), keep every width as `<base>@<width>` screens and say so; scan and plan settle it, and a later ingest run rewrites the manifest.

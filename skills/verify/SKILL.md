@@ -26,6 +26,8 @@ Render each built screen state with the project's own test tooling, score it aga
 5. List the states to verify: every manifest state of every screen the plan has a `screen` item for, with id `<screen>--<state>` and its `reference`. Check each reference file exists; a missing one is `rendered: false` with the reason.
 6. Delete any previous `.sauces/verify/` contents (it is all Sauces output) so iteration numbers start at 1. Leave `deviations.json` and everything else in `.sauces/` alone.
 
+**Lite run** (`.sauces/lite` exists): skip the determinism second pass (`_render/b`), stop the loop in section 3 after one fix round (`n == 2`), skip the pseudo-locale pass, and set `"lite": true` in the summary. RTL still runs. Without the file, leave `lite` out.
+
 ## 2. Write the render test
 
 Follow the reference's render test section (web platforms: also `${CLAUDE_PLUGIN_ROOT}/skills/verify/references/web-capture.md`): use an existing capture harness where possible, or one test file per screen that renders every state from section 1.5 by seeding the screen's state, plus an RTL pass per state. Read the screen, its state class and the project's test helpers first, so the seeding uses the real API.

@@ -341,3 +341,20 @@ def test_summary_schema_accepts_pseudo_issues(tmp_path):
     path.write_text(json.dumps(summary))
     r = run_script("check_json.py", str(REPO / "skills/verify/references/summary-schema.json"), str(path))
     assert r.returncode == 0, r.stdout
+
+
+def test_lite_run_says_what_was_skipped(tmp_path):
+    sauces = tmp_path / ".sauces"
+    shutil.copytree(SAMPLE, sauces)
+    summary_path = sauces / "verify" / "summary.json"
+    summary = json.loads(summary_path.read_text())
+    summary["lite"] = True
+    summary_path.write_text(json.dumps(summary))
+    html = render(sauces, tmp_path)
+    assert "Lite run" in section(html, "fidelity")
+    r = run_script("check_json.py", str(REPO / "skills/verify/references/summary-schema.json"), str(summary_path))
+    assert r.returncode == 0, r.stdout
+
+
+def test_full_run_has_no_lite_note(sample_html):
+    assert "Lite run" not in sample_html

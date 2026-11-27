@@ -384,6 +384,10 @@ def section_fidelity(inputs) -> str:
         return '<p class="empty">No screen states were verified.</p>'
     renderer = inputs.verify.get("renderer")
     lead = f'<p class="muted">Rendered with {e(renderer)}.</p>' if renderer else ""
+    if inputs.verify.get("lite") is True:
+        lead += ('<p><strong>Lite run:</strong> one fix round at most, no determinism check, '
+                 'no pseudo-locale pass, and only the narrowest frame of each web screen. '
+                 'Run <code>/sauces:cook</code> without <code>--lite</code> for a full check.</p>')
     return lead + breakpoints_table(inputs) + '<div class="shots">' + "".join(shots) + "</div>"
 
 
