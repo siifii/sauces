@@ -9,6 +9,7 @@ Give it a design. Get mobile or web UI that fits your app.
 *We make the sauce; you make the sandwich.*
 
 [![Claude Code plugin](https://img.shields.io/badge/Claude_Code-plugin-D97757?logo=claude&logoColor=white)](https://code.claude.com/docs/en/plugins)
+[![CI](https://github.com/siifii/sauces/actions/workflows/ci.yml/badge.svg)](https://github.com/siifii/sauces/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-0.2.0-orange)](.claude-plugin/plugin.json)
 [![Status](https://img.shields.io/badge/status-alpha-yellow)](#status)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
