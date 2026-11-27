@@ -58,6 +58,8 @@ Open Claude Code in your app's folder and run:
 /sauces:cook ./designs/login.png ./designs/login-error.png
 ```
 
+Add `--lite` for a quicker, cheaper first try (one width per web screen, one fix round, no determinism check).
+
 You can mix sources in one go: `https://figma.com/design/...`, `./designs/*.png`, `./flow.pdf`.
 
 Sauces pauses once to show you the plan. Nothing gets written until you approve it. If you stop halfway, run the same command again and it picks up where it left off. If nothing changed, it does nothing.
@@ -106,6 +108,7 @@ Most design-to-code tools expect a tidy Figma file and a brand new app. Most tea
 | `/sauces:build` | Write the code from the approved plan |
 | `/sauces:verify` | Render, score and fix (3 rounds max) |
 | `/sauces:report` | Write `.sauces/report.html` |
+| `/sauces:translate [locale…]` | Fill the translation TODOs as machine translations marked for review |
 
 ## What it works with
 
