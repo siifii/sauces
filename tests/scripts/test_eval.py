@@ -306,3 +306,22 @@ def test_eval_lints_only_new_lines_in_tracked_changed_files(tmp_path):
     result = run_script("eval.py", *cmd)
     assert result.returncode == 1
     assert "✗ 1" in result.stdout
+
+
+def test_eval_allows_color_literals_in_planned_token_file(tmp_path):
+    results = make_result(tmp_path)
+    root = results / "flutter-bloc"
+    path = "lib/design_palette.dart"
+    (root / path).write_text("final brand = Color(0xFF3D5AFE);\n")
+    state = root / ".sauces/state.json"
+    metadata = json.loads(state.read_text())
+    metadata["generated_files"].append(path)
+    state.write_text(json.dumps(metadata))
+    plan_path = root / ".sauces/plan.json"
+    plan = json.loads(plan_path.read_text())
+    plan["items"].append({"decision": "token", "path": path})
+    plan_path.write_text(json.dumps(plan))
+
+    result = run_script("eval.py", "--results", str(results), "--fixtures", "flutter-bloc",
+                        "--builds-cmd", "true")
+    assert result.returncode == 0, result.stdout + result.stderr

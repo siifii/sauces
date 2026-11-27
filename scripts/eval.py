@@ -95,7 +95,7 @@ def source_files(root, project, entries, platform):
     return sorted(str(file.relative_to(root)) for file in files), missing
 
 
-def color_globs(root, profile):
+def color_globs(root, profile, plan):
     globs = ["**/tokens/**", "**/Tokens/**"]
     source = (profile.get("theme") or {}).get("tokens_source")
     if source:
@@ -105,7 +105,11 @@ def color_globs(root, profile):
         if path.exists() and path.resolve().is_relative_to(root.resolve()):
             relative = path.resolve().relative_to(root.resolve()).as_posix()
             globs.append(f"{relative}/**" if path.is_dir() else relative)
-    return globs
+    planned_tokens = {
+        item["path"] for item in plan.get("items", [])
+        if item.get("decision") == "token" and item.get("path")
+    }
+    return globs + sorted(planned_tokens)
 
 
 def changed_line_ranges(root, file):
@@ -204,7 +208,7 @@ def score_fixture(root, name, builds_cmd, require_captures=False):
     changed_source, missing_changed = source_files(root, project, changed, platform)
     missing = set(missing_generated) | set(missing_changed)
     lint_ok, lint_cell = run_lint(root, sorted(set(generated_source) | set(changed_source)),
-                                color_globs(root, selected), platform,
+                                color_globs(root, selected, plan), platform,
                                 set(changed_source) - set(generated_source))
     if missing:
         lint_ok, lint_cell = False, f"✗ {len(missing)} missing"

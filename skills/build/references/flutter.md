@@ -82,7 +82,7 @@ Flutter has no stable, project-wide preview convention. Follow the project:
 - Use the plan's `strings[]` keys and values exactly. A key the plan marked as existing is reused, not duplicated.
 - New keys go into **every** ARB file in `arb-dir`:
   - the template (source) locale gets the value and an `@key` entry with a `description` that says where the text appears;
-  - every other locale gets the **source value** and `"@key": {"description": "TODO(sauces): translate"}`. Never invent a translation, even one you are confident about: translation is the user's call.
+  - every other locale gets the **source value** and `"@key": {"description": "TODO(sauces): translate"}`. For a plain LTR fallback in an RTL catalog, wrap the value in LRI (JSON `\u2066`) and PDI (JSON `\u2069`) so neutral punctuation stays at the end of the phrase. Keep the source catalog unchanged. For ICU select/plural messages, isolate the displayed branch text without wrapping ICU syntax. Keep placeholders intact and verify the fallback visually. Never invent a translation.
 - Insert entries next to the feature's other keys, or at the end, keeping the file's existing formatting (indentation, compact or expanded `@key` objects). Never rewrite or reorder existing entries. The ARB must stay valid JSON.
 - Text that varies uses ICU, never concatenation or interpolation in Dart:
   - placeholders: `"loginWelcomeUser": "Welcome back, {name}"` with `"@loginWelcomeUser": {"placeholders": {"name": {"type": "String"}}}`;

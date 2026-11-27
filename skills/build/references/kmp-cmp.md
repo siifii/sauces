@@ -22,7 +22,7 @@ Keep seeded UI state shareable in commonMain. Follow existing StateFlow/ViewMode
 Write common UI to the module's commonMain Kotlin and composeResources roots. Put host integration in the corresponding platform source set or launcher.
 
 ## Checks
-Discover Gradle tasks and compile common code and the configured mobile targets. Assemble an Android host when present. Build the iOS host through its Xcode scheme on macOS when present. Run configured common/host tests and record results by target. Add approved dependencies to their actual source set. Run lint_generated.py with --platform kmp-cmp.
+Discover Gradle tasks and compile common code and the configured mobile targets. Assemble an Android host when present. Build and launch the iOS host through its Xcode scheme on macOS when present. Keep the iOS host’s CADisableMinimumFrameDurationOnPhone Info.plist value set to true so the Compose controller passes startup validation. [JetBrains UIKit integration guide](https://kotlinlang.org/docs/multiplatform/compose-uikit-integration.html) Run configured common/host tests and record results by target. Add approved dependencies to their actual source set. Run lint_generated.py with --platform kmp-cmp.
 
 ## Don't
 Keep Android R, android.* and Apple APIs outside commonMain. Avoid introducing a desktop target just to render a mobile design.

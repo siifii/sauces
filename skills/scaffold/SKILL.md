@@ -51,6 +51,8 @@ Load `${CLAUDE_PLUGIN_ROOT}/skills/scaffold/references/<platform-id>.md` for eac
 
 ## 4. Create
 
+After a template creates the selected directory, record that owned path with `sauces_state.py add-files generated` before editing the starter or running checks. Leave the scan stage pending until creation and rescan succeed.
+
 For Android, iOS, KMP and React Native, follow the chosen reference in order. Track completed platforms during a template handoff. For Flutter, follow its reference in this order:
 
 1. Create the project (section 2), add the dependencies and edit `pubspec.yaml` (section 3).

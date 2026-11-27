@@ -1,5 +1,8 @@
 """SDK-backed fixture checks, opt in with pytest -m mobile."""
+import hashlib
 import os
+import plistlib
+import shlex
 import shutil
 import subprocess
 import sys
@@ -89,9 +92,10 @@ def wait_for_android_screen(app, adb, app_id, state, direction):
             continue
         tree = ET.fromstring(run(app, *adb, "exec-out", "cat", path))
         nodes = [node.attrib for node in tree.iter("node") if node.get("package") == app_id]
-        texts = {node.get("text") for node in nodes}
+        texts = {node.get("text", "").casefold() for node in nodes}
         loading = any(node.get("class") == "android.widget.ProgressBar" for node in nodes)
-        if button in texts and (error in texts) == (state == "error") and loading == (state == "loading"):
+        if (button.casefold() in texts and (error.casefold() in texts) == (state == "error")
+                and loading == (state == "loading")):
             return
     pytest.fail(f"{app_id} did not show the {state} screen in {direction}")
 
@@ -118,6 +122,11 @@ def test_ios_simulator_build_and_optional_capture(native_app, tmp_path, name, pr
         *arch, "CODE_SIGNING_ALLOWED=NO", "build")
     bundle = products / "Debug-iphonesimulator/Fixture.app"
     assert (bundle / "Fixture").is_file()
+    with (bundle / "Info.plist").open("rb") as info_file:
+        info = plistlib.load(info_file)
+    assert "UILaunchScreen" in info
+    if name == "kmp-cmp":
+        assert info.get("CADisableMinimumFrameDurationOnPhone") is True
 
     device = os.environ.get("SAUCES_IOS_SIMULATOR")
     if not device:
@@ -144,13 +153,54 @@ def test_ios_simulator_build_and_optional_capture(native_app, tmp_path, name, pr
 
 
 @pytest.mark.skipif(not shutil.which("npm"), reason="Node and npm required")
-def test_expo_typecheck_and_mobile_bundles(copy_app):
+def test_expo_typecheck_and_mobile_bundles(copy_app, tmp_path):
     app = copy_app("react-native")
     run(app, "npm", "ci", "--no-audit", "--no-fund")
     run(app, "npm", "run", "typecheck")
     run(app, "npm", "run", "bundle:mobile")
     assert (app / "dist/_expo/static/js/android").is_dir()
     assert (app / "dist/_expo/static/js/ios").is_dir()
+
+    serial = os.environ.get("SAUCES_ANDROID_SERIAL")
+    if serial:
+        capture_expo_android(app, tmp_path, serial)
+
+
+def capture_expo_android(app, output, serial):
+    # Test the Expo host with its own bundled JS so Expo Go and Metro aren't required.
+    run(app, "env", "CI=1", "EXPO_NO_TELEMETRY=1", "./node_modules/.bin/expo",
+        "prebuild", "--platform", "android", "--no-install")
+    android = app / "android"
+    gradle = android / "app/build.gradle"
+    suffix = ".capture" + hashlib.sha256(str(output).encode()).hexdigest()[:8]
+    gradle.write_text(gradle.read_text().replace(
+        'bundleCommand = "export:embed"', 'bundleCommand = "export:embed"\n    debuggableVariants = []'
+    ).replace("buildTypes {\n        debug {", f'buildTypes {{\n        debug {{\n            applicationIdSuffix "{suffix}"'))
+    application = android / "app/src/main/java/dev/sauces/rnfixture/MainApplication.kt"
+    application.write_text(application.read_text().replace(
+        "context = applicationContext,", "context = applicationContext,\n      useDevSupport = false,"))
+    debug_manifest = android / "app/src/debug/AndroidManifest.xml"
+    debug_manifest.write_text(debug_manifest.read_text().replace(
+        "</manifest>", '    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" '
+        'tools:node="remove"/>\n</manifest>'))
+
+    adb = ("adb", "-s", serial)
+    abi = run(app, *adb, "shell", "getprop", "ro.product.cpu.abi").decode().strip()
+    run(android, "./gradlew", "--no-daemon", f"-PreactNativeArchitectures={abi}", "assembleDebug")
+    apk, = android.glob("app/build/outputs/apk/debug/*.apk")
+    run(app, *adb, "install", "-r", str(apk))
+    app_id = "dev.sauces.rnfixture" + suffix
+    for state in ("default", "error", "loading"):
+        for direction in ("ltr", "rtl"):
+            run(app, *adb, "shell", "am", "force-stop", app_id)
+            uri = f"sauces-fixture://screen?state={state}&rtl={int(direction == 'rtl')}"
+            launch = run(app, *adb, "shell", "am", "start", "-W", "-a",
+                         "android.intent.action.VIEW", "-d", shlex.quote(uri), "-p", app_id)
+            assert b"Status: ok" in launch, launch
+            wait_for_android_screen(app, adb, app_id, state, direction)
+            path = output / f"react-native-expo--{state}--{direction}.png"
+            path.write_bytes(run(app, *adb, "exec-out", "screencap", "-p"))
+            check_png(path)
 
 
 @pytest.mark.skipif(not shutil.which("npm"), reason="Node and npm required")

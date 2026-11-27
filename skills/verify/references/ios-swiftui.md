@@ -7,3 +7,7 @@ Use the same simulator configuration, status-bar treatment, interface style, Dyn
 
 ## Run
 List schemes and simulator destinations. Run xcodebuild test with the discovered project/workspace, scheme, simulator UDID, -only-testing for the render test and a fresh -resultBundlePath inside the iteration directory. Run the installed `xcrun xcresulttool export attachments --help`, export from that bundle, and map exports by attachment name to <id>.png. Compile and lint the new test using the build reference. When the project has no runnable capture harness, test target or simulator, record why and use the manual checklist. Follow the build reference when a target-membership edit is needed and obtain plan approval before changing project configuration.
+
+## Scripted simulator capture
+
+When the app already has a debug fixture entry point that selects each screen state, use it on the designated simulator if no UI test target is available. Build and install the actual app, then use `xcrun simctl launch --terminate-running-process <udid> <bundle-id> <fixture-arguments>`. Wait for a state-specific readiness signal or verify the screen through the project's inspection tooling. Capture with `xcrun simctl io <udid> screenshot <output.png>`. Keep the simulator, status-bar settings, appearance, locale and crop identical for both determinism passes. Record the actual runner and which states were exercised.
