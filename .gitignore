@@ -1,8 +1,82 @@
-.DS_Store
-__pycache__/
-*.pyc
-.sauces/verify/
-.venv/
-.worktrees/
+# Sauces is a public plugin repo. Only the plugin (skills, agents, scripts, assets),
+# its tests, examples and public docs are tracked. Everything below stays local.
+
+# --- Private: internal specs, plans and agent workspaces --------------------------
+docs/superpowers/
 .superpowers/
+.worktrees/
 .claude/settings.local.json
+.claude/worktrees/
+
+# --- Secrets ----------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+
+# --- Sauces working state from local runs (never commit a run's output) ------------
+.sauces/
+eval.md
+eval-results/
+
+# --- Python -----------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- OS and editors ---------------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+*.iml
+
+# --- Logs -------------------------------------------------------------------------
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Example projects: dependencies and build output -----------------------------
+# Scoped to examples/ so plugin folders such as skills/build/ are never ignored.
+# Each fixture also keeps its own platform .gitignore.
+examples/**/node_modules/
+examples/**/dist/
+examples/**/out/
+examples/**/.next/
+examples/**/_site/
+examples/**/.astro/
+examples/**/coverage/
+examples/**/test-results/
+examples/**/playwright-report/
+examples/**/*.tsbuildinfo
+examples/**/next-env.d.ts
+examples/**/.expo/
+examples/**/build/
+examples/**/.gradle/
+examples/**/.kotlin/
+examples/**/local.properties
+examples/**/.dart_tool/
+examples/**/.flutter-plugins
+examples/**/.flutter-plugins-dependencies
+examples/**/lib/l10n/gen/
+examples/**/ephemeral/
+examples/**/Pods/
+examples/**/DerivedData/
+examples/**/xcuserdata/
+examples/**/*.xcworkspace/xcuserdata/

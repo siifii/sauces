@@ -1,6 +1,6 @@
 # Recommendations, strings placement and dependency changes
 
-Use this file in plan steps 4–6. Scan's `findings[]` say where the project falls short of the platform's best practices; plan turns each one into a recommendation the user chooses at the approval gate (design §5.2). Build applies only the options the user picked.
+Use this file in plan steps 4–6. Scan's `findings[]` say where the project falls short of the platform's best practices; plan turns each one into a recommendation the user chooses at the approval gate. Build applies only the options the user picked.
 
 ## 1. Writing a recommendation
 
@@ -56,7 +56,7 @@ Scan findings are not the only source of recommendations. When the design differ
 
 Additive tokens (a new theme-extension field or text style only new components use) are plan items, not recommendations.
 
-## 4. Where strings go (design §5.2)
+## 4. Where strings go
 
 The plan lists strings; build writes them where this table says:
 
@@ -84,7 +84,7 @@ RTL: when `localization.rtl` is true, every new string and layout must work righ
 
 `dependency_changes[]` entries are `{package, version, scope: "dev"|"main", reason}`. List only what build will add for the plan as it stands; entries for options the user has not picked are not listed. Before listing a package, check the project's manifest (`pubspec.yaml`, `Package.swift`, Gradle version catalog) to see whether it is already there.
 
-Screenshot tooling (design §5.6), needed by verify:
+Screenshot tooling, needed by verify:
 
 | Platform | When the project has none (`screenshot_tooling.present: false`) |
 |---|---|

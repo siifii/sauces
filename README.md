@@ -186,7 +186,7 @@ skills/           cook, ingest, scan-project, scaffold, plan, build, verify, rep
 agents/           design-analyst, component-builder, fidelity-checker
 scripts/          Python 3 helpers (Pillow + numpy), including eval.py
 examples/         sample designs and target projects
-docs/superpowers/ spec and build plans
+tests/            pytest suite
 ```
 
 ```bash
@@ -251,7 +251,7 @@ Fixture results show that the sample code builds or renders. Live results show w
 
 ## Contributing
 
-Issues and pull requests are welcome. Before you start, read [`docs/superpowers/spec.md`](docs/superpowers/spec.md) and [`docs/superpowers/plan.md`](docs/superpowers/plan.md). Skills are written as instructions for Claude, so keep them that way. Run the tests and `claude plugin validate .` before you open a PR.
+Issues and pull requests are welcome. Read [`CLAUDE.md`](CLAUDE.md) for the rules the skills follow. Skills are written as instructions for Claude, so keep them that way. Run the tests and `claude plugin validate .` before you open a PR.
 
 ## License
 

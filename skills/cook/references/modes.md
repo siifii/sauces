@@ -1,6 +1,6 @@
 # Modes
 
-Cook picks the mode from `.sauces/project-profile.json` `mode` right after scan-project (design §5.1). Eval mode is `.sauces/eval-approve` existing: no human is present, so take the stated eval action and say so in the summary.
+Cook picks the mode from `.sauces/project-profile.json` `mode` right after scan-project. Eval mode is `.sauces/eval-approve` existing: no human is present, so take the stated eval action and say so in the summary.
 
 | Profile `mode` | Sauces mode | What cook does | Eval mode |
 |---|---|---|---|
