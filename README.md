@@ -9,7 +9,7 @@ Give it a design. Get mobile or web UI that fits your app.
 *We make the sauce; you make the sandwich.*
 
 [![Claude Code plugin](https://img.shields.io/badge/Claude_Code-plugin-D97757?logo=claude&logoColor=white)](https://code.claude.com/docs/en/plugins)
-[![Version](https://img.shields.io/badge/version-0.1.0-orange)](.claude-plugin/plugin.json)
+[![Version](https://img.shields.io/badge/version-0.2.0-orange)](.claude-plugin/plugin.json)
 [![Status](https://img.shields.io/badge/status-alpha-yellow)](#status)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
@@ -160,7 +160,7 @@ Sauces runs inside your Claude Code session. It doesn't bundle any MCP server an
 
 ## Status
 
-This is an alpha (v0.1). All seven platforms have scan, scaffold, build and verify, and Flutter has had the most use. The web platforms are the newest. Full end-to-end runs on the native platforms haven't been validated yet, so expect some rough edges. If something breaks, please [open an issue](https://github.com/siifii/sauces/issues).
+This is an alpha (v0.2). See the [changelog](CHANGELOG.md). All seven platforms have scan, scaffold, build and verify, and Flutter has had the most use. The web platforms are the newest. Full end-to-end runs on the native platforms haven't been validated yet, so expect some rough edges. If something breaks, please [open an issue](https://github.com/siifii/sauces/issues).
 
 Sauces isn't in the Claude plugin directory. Install it from this repo with the two commands above.
 

@@ -30,3 +30,11 @@ def test_manifest_mentions_web():
     assert "web-react" in readme and "web-html" in readme
     claude_md = (REPO / "CLAUDE.md").read_text()
     assert "| Web (React) |" in claude_md and "| Web (HTML) |" in claude_md
+
+
+def test_version_is_consistent():
+    import re
+    version = json.loads((REPO / ".claude-plugin/plugin.json").read_text())["version"]
+    assert f"badge/version-{version}-" in (REPO / "README.md").read_text()
+    changelog = (REPO / "CHANGELOG.md").read_text()
+    assert re.search(r"^## \[?(\d+\.\d+\.\d+)", changelog, re.M).group(1) == version
