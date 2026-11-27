@@ -1,0 +1,29 @@
+/* Desktop layer for the login-web sample: loaded after ../../login/src/login.css.
+   1440 x 900 canvas at DPR 1. Brand panel on the start side, form on the end side. */
+html, body { width: 1440px; height: 900px; }
+
+.page {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 900px;
+}
+
+.brand {
+  background: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.brand .mark { display: block; width: 96px; height: 96px; }
+
+.form-side {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 300px; /* the default-state form (300 high) is vertically centered */
+}
+
+.form-side .screen {
+  width: 420px;
+  padding: 0;
+}

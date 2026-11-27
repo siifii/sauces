@@ -1,0 +1,15 @@
+x-button { display: inline-block; }
+
+x-button button {
+  min-block-size: 48px;
+  padding-inline: var(--space-6);
+  border: none;
+  border-radius: var(--radius-m);
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+x-button[busy] button { opacity: 0.6; cursor: progress; }

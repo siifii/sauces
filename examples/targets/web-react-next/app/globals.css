@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+/* Design tokens (Tailwind v4 theme): bg-brand, text-text-variant, rounded-m, ... */
+@theme {
+  --color-brand: #3D5AFE;
+  --color-on-brand: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-surface-variant: #F3F3F7;
+  --color-text: #1B1B1F;
+  --color-text-variant: #49454F;
+  --color-outline: #79747E;
+  --color-error: #B3261E;
+  --radius-m: 12px;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}

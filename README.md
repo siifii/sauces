@@ -4,7 +4,7 @@
 
 # Sauces
 
-Give it a design. Get mobile UI that fits your app.
+Give it a design. Get mobile or web UI that fits your app.
 
 *We make the sauce; you make the sandwich.*
 
@@ -18,12 +18,15 @@ Give it a design. Get mobile UI that fits your app.
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-F05138?logo=swift&logoColor=white)](#what-it-works-with)
 [![Compose Multiplatform](https://img.shields.io/badge/Compose_Multiplatform-7F52FF?logo=kotlin&logoColor=white)](#what-it-works-with)
 [![React Native](https://img.shields.io/badge/React_Native-20232A?logo=react&logoColor=61DAFB)](#what-it-works-with)
+[![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](#what-it-works-with)
+[![Next.js](https://img.shields.io/badge/Next.js-000000?logo=nextdotjs&logoColor=white)](#what-it-works-with)
+[![HTML/CSS](https://img.shields.io/badge/HTML%2FCSS-E34F26?logo=html5&logoColor=white)](#what-it-works-with)
 
 </div>
 
 ---
 
-Sauces is a plugin for [Claude Code](https://code.claude.com). You give it a design (a Figma link, screenshots, a PDF or some SVG icons) and it builds that screen inside your mobile app.
+Sauces is a plugin for [Claude Code](https://code.claude.com). You give it a design (a Figma link, screenshots, a PDF or some SVG icons) and it builds that screen inside your mobile app or website.
 
 It reads your project before writing anything, so the new code uses your architecture, your theme, your components and your translation files. Then it renders every screen state, compares it to the design, fixes what doesn't match, and writes you a report.
 
@@ -77,7 +80,7 @@ It also picks a mode based on your folder:
 
 ## Why it's useful
 
-Most design-to-code tools expect a tidy Figma file and a brand new web app. Most mobile teams have an existing codebase and a designer who sent PNGs. Sauces is made for that case.
+Most design-to-code tools expect a tidy Figma file and a brand new app. Most teams have an existing codebase and a designer who sent PNGs. Sauces is made for that case.
 
 - It never quietly overwrites your components. It reuses them, adds optional parameters, or asks you first.
 - Every piece of text goes into your translation files, in every language you have. Existing keys get reused, and right-to-left layouts are rendered and checked too. Icons become real project assets.
@@ -93,7 +96,7 @@ Most design-to-code tools expect a tidy Figma file and a brand new web app. Most
 | `/sauces:cook <sources…>` | The whole thing, start to finish |
 | `/sauces:ingest <sources…>` | Read the designs into `.sauces/manifest.json` |
 | `/sauces:scan-project` | Study your project into `.sauces/project-profile.json` |
-| `/sauces:scaffold [flutter\|android\|ios\|kmp\|react-native]` | Create a new project in an empty folder |
+| `/sauces:scaffold [flutter\|android\|ios\|kmp\|react-native\|react\|html]` | Create a new project in an empty folder |
 | `/sauces:plan` | Make the plan and wait for your OK |
 | `/sauces:build` | Write the code from the approved plan |
 | `/sauces:verify` | Render, score and fix (3 rounds max) |
@@ -108,8 +111,12 @@ Most design-to-code tools expect a tidy Figma file and a brand new web app. Most
 | iOS | SwiftUI | MVVM/TCA, SPM modules | Snapshot runner or Xcode UI tests | `ios` |
 | Compose Multiplatform | Compose in `commonMain` | Shared vs platform UI, expect/actual | Capture from a mobile host | `kmp` |
 | React Native | Expo or bare | Expo Router, React Navigation, hooks, Zustand, Redux Toolkit | Maestro, Detox or device capture | `react-native` |
+| Web: React (`web-react`) | Next.js (App or Pages Router) or Vite | Tailwind, CSS Modules, CSS-in-JS, next-intl, react-i18next | Playwright in Chromium, at every designed width | `react` |
+| Web: HTML (`web-html`) | Plain HTML/CSS/JS, Eleventy, Astro | Custom elements, CSS custom-property tokens, `data-i18n` | Playwright in Chromium, at every designed width | `html` |
 
 Android XML Views and UIKit are recognized but not supported, and Sauces tells you so. For React Native, `/sauces:scaffold react-native` uses Expo; add `--bare` for the Community CLI. Both put the app in `react-native-app/`.
+
+For the web, `/sauces:scaffold react` creates a Vite + React + TypeScript app in `web-app/` (add `--next` for Next.js), and `/sauces:scaffold html` creates a static site with no build step in `web-html/`. Web designs often come at several widths (a phone frame and a desktop frame): Sauces builds one responsive screen and checks it at each width you designed. Widths you didn't design are listed as "not designed, not verified". Vue, Svelte, Angular, Django/Rails/PHP templates and WordPress are recognized but not supported yet.
 
 You'll need the usual tools for your platform:
 
@@ -118,6 +125,7 @@ You'll need the usual tools for your platform:
 - SwiftUI needs Xcode on a Mac with an iOS simulator installed.
 - Compose Multiplatform needs the Android and iOS toolchains for each host you want to build.
 - React Native needs Node.js and your package manager, plus the native toolchains for native builds.
+- Web needs Node.js. Verify uses Playwright with Chromium (about 150 MB the first time); Sauces asks before installing it, and a plain HTML site gets no `package.json`.
 - PDF designs need `pdftoppm` (`brew install poppler` or `apt install poppler-utils`).
 
 If Sauces can't render on your machine, verify gives you a checklist to go through by hand instead of a score.
@@ -148,7 +156,7 @@ Sauces runs inside your Claude Code session. It doesn't bundle any MCP server an
 
 ## Status
 
-This is an alpha (v0.1). All five platforms have scan, scaffold, build and verify, and Flutter has had the most use. Full end-to-end runs on the native platforms haven't been validated yet, so expect some rough edges. If something breaks, please [open an issue](https://github.com/siifii/sauces/issues).
+This is an alpha (v0.1). All seven platforms have scan, scaffold, build and verify, and Flutter has had the most use. The web platforms are the newest. Full end-to-end runs on the native platforms haven't been validated yet, so expect some rough edges. If something breaks, please [open an issue](https://github.com/siifii/sauces/issues).
 
 Sauces isn't in the Claude plugin directory. Install it from this repo with the two commands above.
 
@@ -213,6 +221,16 @@ The live evaluator starts a fresh Claude Code pipeline. Run it once for each exi
 .venv/bin/python scripts/eval.py --run --fixtures empty --create-platform react-native \
   --results /tmp/sauces-expo-create --builds-cmd 'npx expo export --platform android --platform ios' \
   --require-captures
+```
+
+**Web checks.** The `web` suite installs and builds the React fixtures (`web-react-vite`, `web-react-next`), loads the `web-html` fixture in Chromium in both directions, and checks the capture script verify uses. It needs Node and a network connection for `npm ci`.
+
+```bash
+.venv/bin/pytest -m web
+.venv/bin/python scripts/eval.py --run --fixtures web-react-vite --design examples/designs/login-web \
+  --results /tmp/sauces-web-vite
+.venv/bin/python scripts/eval.py --run --fixtures empty --create-platform web-html \
+  --design examples/designs/login-web --results /tmp/sauces-web-html-create
 ```
 
 Fixture results show that the sample code builds or renders. Live results show whether Sauces can scaffold or change it and match the design. A live run needs Claude usage credits, the platform SDKs and a working device or screenshot runner.

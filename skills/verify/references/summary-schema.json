@@ -4,7 +4,7 @@
   "type": "object",
   "properties": {
     "version": {"type": "integer", "enum": [1]},
-    "platform": {"type": "string", "enum": ["flutter", "android-compose", "ios-swiftui", "kmp-cmp", "react-native"]},
+    "platform": {"type": "string", "enum": ["flutter", "ios-swiftui", "android-compose", "kmp-cmp", "react-native", "web-react", "web-html"]},
     "threshold": {"type": "number", "minimum": 0, "maximum": 100},
     "threshold_source": {"type": "string", "enum": ["default", "config"], "description": "default = 90; config = .sauces/config.json fidelity_threshold."},
     "renderer": {"type": "string", "description": "How screens were rendered, e.g. 'flutter test (test/sauces/)' or 'manual checklist'."},
@@ -13,7 +13,7 @@
       "items": {
         "type": "object",
         "properties": {
-          "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*--[a-z0-9][a-z0-9_-]*$", "description": "<screen>--<state>"},
+          "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*(@[0-9]+)?--[a-z0-9][a-z0-9_-]*$", "description": "<screen>--<state>; web: <screen>@<width>--<state>"},
           "screen": {"type": "string"},
           "state": {"type": "string"},
           "reference": {"type": "string"},

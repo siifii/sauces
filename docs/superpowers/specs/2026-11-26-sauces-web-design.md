@@ -1,6 +1,6 @@
 # Sauces web targets: design
 
-Date: 2026-11-26. Status: draft, awaiting the user's approval (builder check done 2026-11-26). This extends `docs/superpowers/specs/2026-11-24-sauces-v0.1-design.md` (the "v0.1 design"). Where the two disagree on web, this document wins; everything else in the v0.1 design still applies to web unchanged (three modes, plan gate, `.sauces/` state, report, localization as a headline strength, no bundled MCP).
+Date: 2026-11-26. Status: approved by the user 2026-11-26 (builder check done the same day). This extends `docs/superpowers/specs/2026-11-24-sauces-v0.1-design.md` (the "v0.1 design"). Where the two disagree on web, this document wins; everything else in the v0.1 design still applies to web unchanged (three modes, plan gate, `.sauces/` state, report, localization as a headline strength, no bundled MCP).
 
 ## 1. Intent
 

@@ -2,7 +2,9 @@
 """Validate a JSON file against a small JSON-Schema subset (Sauces).
 
 Stdlib only. Supported keywords: type (string or list), properties, required,
-items, enum, pattern, minimum, maximum, additionalProperties (false only).
+items, enum, pattern, minimum, maximum, additionalProperties (false only), and
+if/then/else (when DATA is valid against `if`, it must be valid against `then`, else
+against `else`).
 Annotation keys $schema, title, description are ignored. Any other keyword is
 a usage error (exit 2), so an unsupported schema never passes silently.
 
@@ -16,7 +18,7 @@ import sys
 
 ANNOTATIONS = {"$schema", "title", "description"}
 SUPPORTED = {"type", "properties", "required", "items", "enum", "pattern",
-             "minimum", "maximum", "additionalProperties"}
+             "minimum", "maximum", "additionalProperties", "if", "then", "else"}
 
 
 class SchemaError(Exception):
@@ -86,6 +88,9 @@ def check_schema(schema, path="schema"):
             check_schema(sub, f"{path}.properties.{k}")
     if "items" in schema:
         check_schema(schema["items"], f"{path}.items")
+    for kw in ("if", "then", "else"):
+        if kw in schema:
+            check_schema(schema[kw], f"{path}.{kw}")
     if "additionalProperties" in schema and schema["additionalProperties"] not in (True, False):
         raise SchemaError(f"{path}: unsupported additionalProperties value (only true or false)")
 
@@ -130,6 +135,10 @@ def validate(schema: dict, data: object, path: str = "") -> list[str]:
     if isinstance(data, list) and "items" in schema:
         for i, item in enumerate(data):
             errors.extend(validate(schema["items"], item, _join(path, i)))
+    if "if" in schema:
+        branch = "then" if not validate(schema["if"], data, path) else "else"
+        if branch in schema:
+            errors.extend(validate(schema[branch], data, path))
     return errors
 
 

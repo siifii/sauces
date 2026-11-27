@@ -1,0 +1,16 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 48px;
+  padding-inline: var(--space-6);
+  border: none;
+  border-radius: var(--radius-m);
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:disabled { opacity: 0.6; cursor: default; }

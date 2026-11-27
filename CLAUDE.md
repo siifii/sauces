@@ -2,7 +2,7 @@
 
 > We make the sauce; you make the sandwich.
 
-Sauces is a **Claude Code plugin** that takes design sources (Figma links, PNG/JPG screenshots, PDFs, SVGs), reads the target mobile project, and implements the UI as reusable components that follow *that project's* architecture and conventions. It verifies the result visually and finishes with a report: a component graph, reuse stats, a design audit and best practices.
+Sauces is a **Claude Code plugin** that takes design sources (Figma links, PNG/JPG screenshots, PDFs, SVGs), reads the target mobile or web project, and implements the UI as reusable components that follow *that project's* architecture and conventions. It verifies the result visually and finishes with a report: a component graph, reuse stats, a design audit and best practices.
 
 The full product spec is in `docs/superpowers/spec.md`. The phased build plan is in `docs/superpowers/plan.md`. Read both before changing anything.
 
@@ -19,7 +19,7 @@ examples/                      sample design inputs + sample target projects for
 docs/superpowers/              spec, plan, decisions
 ```
 
-## Supported targets (v0.1)
+## Supported targets
 
 | Platform | UI toolkit | Architecture to detect & follow |
 |---|---|---|
@@ -27,6 +27,9 @@ docs/superpowers/              spec, plan, decisions
 | iOS | SwiftUI (primary), UIKit (awareness) | MVVM / TCA, SPM modules |
 | KMP / CMP | Compose Multiplatform in `commonMain` | shared UI vs platform-specific, expect/actual |
 | Flutter | Widgets | BLoC/Cubit, Riverpod, Provider; feature-first folders |
+| React Native | Expo or bare | Expo Router / React Navigation, hooks, Zustand, Redux Toolkit |
+| Web (React) | React 19: Next.js (App/Pages Router) or Vite | Tailwind v3/v4, CSS Modules, CSS-in-JS; next-intl, react-i18next; Vitest + Testing Library |
+| Web (HTML) | Static HTML/CSS/JS, Eleventy, Astro | custom elements in light DOM, CSS custom-property tokens, `data-i18n` loader |
 
 ## Rules for writing this plugin
 

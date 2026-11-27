@@ -29,10 +29,12 @@
             "type": "string",
             "enum": [
               "flutter",
-              "android-compose",
               "ios-swiftui",
+              "android-compose",
               "kmp-cmp",
-              "react-native"
+              "react-native",
+              "web-react",
+              "web-html"
             ]
           },
           "architecture": {

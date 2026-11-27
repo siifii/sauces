@@ -28,7 +28,7 @@ Render each built screen state with the project's own test tooling, score it aga
 
 ## 2. Write the render test
 
-Follow the reference's render test section: use an existing capture harness where possible, or one test file per screen that renders every state from section 1.5 by seeding the screen's state, plus an RTL pass per state. Read the screen, its state class and the project's test helpers first, so the seeding uses the real API.
+Follow the reference's render test section (web platforms: also `${CLAUDE_PLUGIN_ROOT}/skills/verify/references/web-capture.md`): use an existing capture harness where possible, or one test file per screen that renders every state from section 1.5 by seeding the screen's state, plus an RTL pass per state. Read the screen, its state class and the project's test helpers first, so the seeding uses the real API.
 
 - If a render test from an earlier verify exists and `state.json` lists it in `generated_files`, update it in place. If a file at that path exists and isn't listed, it is the user's: pick a free name (`<screen>_sauces_render_test.dart`) and say so.
 - Lint and analyze the test as the reference says, and fix every finding.
@@ -107,7 +107,7 @@ When any state has `rendered: false`, write `.sauces/verify/checklist.md`: one s
 - The state shows what the reference shows (error text, loading indicator, disabled button).
 - Right-to-left: the layout mirrors, and nothing clips or overflows.
 
-Say plainly that these states were not verified visually and why. Never give them a score.
+Say plainly that these states were not verified visually and why. Never give them a score. On web, plan breakpoints with no design frame are listed as "not designed, not verified", not as checklist states.
 
 ## 7. Record and report
 

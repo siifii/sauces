@@ -35,6 +35,107 @@ def rows(out):
     return [line for line in out.splitlines() if line.startswith("| flutter-bloc ")]
 
 
+def make_web_result(tmp_path, scores, platform="web-react", page=None):
+    """Turn the sample into a web run: screens login@390 and login@1440 with these default scores."""
+    results = make_result(tmp_path)
+    sauces = results / "flutter-bloc" / ".sauces"
+
+    def edit(name, fn):
+        path = sauces / name
+        data = json.loads(path.read_text())
+        fn(data)
+        path.write_text(json.dumps(data))
+
+    edit("project-profile.json", lambda d: d["projects"][0].update(platform=platform))
+
+    def plan(d):
+        d["platform"] = platform
+        d["breakpoints"] = [{"name": "base", "min_width": 0, "source": "design"},
+                            {"name": "desktop", "min_width": 1440, "source": "design"}]
+    edit("plan.json", plan)
+
+    def manifest(d):
+        base = d["screens"][0]
+        d["screens"] = [dict(base, id=f"login@{w}", base="login", breakpoint=w) for w in (390, 1440)]
+    edit("manifest.json", manifest)
+
+    def summary(d):
+        d["platform"] = platform
+        out = []
+        for w, score in zip((390, 1440), scores):
+            for r in d["results"]:
+                r = dict(r, id=f"login@{w}--{r['state']}", screen=f"login@{w}")
+                if r["state"] == "default":
+                    r.update(score=score, scores=[score], passed=score >= 90)
+                out.append(r)
+        d["results"] = out
+    edit("verify/summary.json", summary)
+
+    if page is not None:
+        rel, text = page
+        (results / "flutter-bloc" / rel).write_text(text)
+        edit("state.json", lambda d: d["generated_files"].append(rel))
+    return results
+
+
+@pytest.mark.parametrize("scores,cell,verdict,code", [
+    ((95.0, 88.0), "88.0", "FAIL", 1), ((95.0, 92.0), "92.0", "PASS", 0)])
+def test_eval_web_fidelity_is_min_across_breakpoints(tmp_path, scores, cell, verdict, code):
+    results = make_web_result(tmp_path, scores)
+    r = run_script("eval.py", "--results", str(results), "--fixtures", "flutter-bloc",
+                   "--builds-cmd", "true")
+    assert r.returncode == code, r.stdout + r.stderr
+    cells = [c.strip() for c in rows(r.stdout)[0].strip("|").split("|")]
+    assert cells[3] == "✓" and cells[5] == cell and cells[8] == verdict, cells
+
+
+def test_eval_web_html_lints_html_and_css(tmp_path):
+    results = make_web_result(tmp_path, (95.0, 95.0), platform="web-html",
+                              page=("index.html", "<h1>Welcome back</h1>\n"))
+    r = run_script("eval.py", "--results", str(results), "--fixtures", "flutter-bloc",
+                   "--builds-cmd", "true")
+    cells = [c.strip() for c in rows(r.stdout)[0].strip("|").split("|")]
+    assert cells[4] == "✗ 1", cells
+
+
+def test_eval_web_html_default_build_is_html_parse(tmp_path):
+    good = make_web_result(tmp_path / "a", (95.0, 95.0), platform="web-html",
+                           page=("index.html", '<main><h1 data-i18n="t">Hi</h1></main>\n'))
+    r = run_script("eval.py", "--results", str(good), "--fixtures", "flutter-bloc")
+    assert [c.strip() for c in rows(r.stdout)[0].strip("|").split("|")][2] == "✓", r.stdout
+    bad = make_web_result(tmp_path / "b", (95.0, 95.0), platform="web-html",
+                          page=("index.html", '<main>\n<section>\n</main>\n'))
+    r = run_script("eval.py", "--results", str(bad), "--fixtures", "flutter-bloc")
+    assert [c.strip() for c in rows(r.stdout)[0].strip("|").split("|")][2] == "✗", r.stdout
+
+
+def test_strict_eval_web_needs_rtl_only_at_narrowest_breakpoint(tmp_path):
+    results = make_web_result(tmp_path, (95.0, 95.0))
+    verify = results / "flutter-bloc" / ".sauces" / "verify"
+    summary = json.loads((verify / "summary.json").read_text())
+    png = (REPO / "examples/designs/login/login--default.png").read_bytes()
+    for result in summary["results"]:
+        result.update(rendered=True, nondeterministic=False, passed=True, score=95.0,
+                      iterations=1, rtl_issues=[])
+        capture = verify / result["id"] / "iter-1" / "rendered.png"
+        capture.parent.mkdir(parents=True, exist_ok=True)
+        capture.write_bytes(png)
+        if result["screen"] == "login@390":
+            (verify / result["id"] / "rtl.png").write_bytes(png)
+    (verify / "summary.json").write_text(json.dumps(summary))
+    command = ("--results", str(results), "--fixtures", "flutter-bloc",
+               "--builds-cmd", "true", "--require-captures")
+    verdict = run_script("eval.py", *command)
+    assert verdict.returncode == 0, verdict.stdout + verdict.stderr
+    (verify / "login@390--default" / "rtl.png").unlink()
+    assert run_script("eval.py", *command).returncode == 1
+
+
+def test_eval_create_platform_accepts_web():
+    r = run_script("eval.py", "--help")
+    assert "web-react" in r.stdout and "web-html" in r.stdout
+
+
 def test_eval_score_mode_table(tmp_path):
     results = make_result(tmp_path)
     out_md = tmp_path / "eval.md"

@@ -1,0 +1,9 @@
+{
+  "home.title": "Your account",
+  "home.greeting": "Hello, {name}",
+  "home.searchLabel": "Search orders",
+  "home.ordersTitle": "Recent orders",
+  "home.ordersBody.one": "You have {count} open order.",
+  "home.ordersBody.other": "You have {count} open orders.",
+  "home.viewOrders": "View orders"
+}
