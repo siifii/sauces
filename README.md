@@ -203,7 +203,19 @@ claude --plugin-dir .                    # try your local copy
 .venv/bin/python scripts/eval.py --run --fixtures flutter-bloc,empty --out eval.md
 ```
 
-`--run` copies each fixture to a temp folder, writes `.sauces/eval-approve` there so the plan is approved automatically (cook deletes the file when it's done), and calls `claude` once per fixture. That costs tokens, needs a network connection, and results change from run to run. No passing baseline has been recorded yet. Without `--run`, `eval.py --results <dir>` scores runs you already have. A row passes when the project builds, every state rendered, the generated code passes lint, and the default state scores at least 90. With `--run`, cook also has to exit successfully.
+`--run` copies each fixture to a temp folder, writes `.sauces/eval-approve` there so the plan is approved automatically (cook deletes the file when it's done), and calls `claude` once per fixture. That costs tokens, needs a network connection, and results change from run to run. Without `--run`, `eval.py --results <dir>` scores runs you already have. A row passes when the project builds, every state rendered, the generated code passes lint, and the default state scores at least 90. With `--run`, cook also has to exit successfully.
+
+Latest web baseline (2026-11-27, design `examples/designs/login-web`, phone 390 px and desktop 1440 px). Fidelity is the lowest default-state score across both widths:
+
+| Fixture | Mode | Builds | Rendered | Lint | Fidelity | Result |
+|---|---|---|---|---|---|---|
+| `web-react-vite` | follow | ✓ | ✓ | ✓ | 97.9 | PASS |
+| `web-react-next` | follow | ✓ | ✓ | ✓ | 97.5 | PASS |
+| `web-html` | follow | ✓ | ✓ | ✓ | 98.1 | PASS |
+| `empty` → `web-react` | create | ✓ | ✓ | ✓ | 98.0 | PASS |
+| `empty` → `web-html` | create | ✓ | ✓ | ✓ | 97.9 | PASS |
+
+Two of these needed a fix before passing, both now in main: verify result IDs didn't accept `@` (the Vite run), and eval linted Vite's `dist/` output (the create run). The `web-react-vite` and `empty → web-react` rows are re-scores of the same runs after those fixes. Mobile baselines aren't recorded here yet.
 
 The default tests include a Flutter render check when Flutter and the fixture's dependencies are installed. Run `flutter pub get` in `examples/targets/flutter-bloc` to turn it on.
 
