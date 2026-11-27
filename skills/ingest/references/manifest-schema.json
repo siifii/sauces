@@ -102,6 +102,14 @@
                 },
                 "layout": {
                   "type": "object"
+                },
+                "appearance": {
+                  "type": "string",
+                  "enum": [
+                    "light",
+                    "dark"
+                  ],
+                  "description": "The color scheme this frame shows. Dark frames of a state use id <state>-dark (see skills/plan/references/dark-mode.md). Missing means light."
                 }
               },
               "required": [

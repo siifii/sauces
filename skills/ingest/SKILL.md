@@ -102,7 +102,7 @@ Distinct file-name states are never merged, even when they look almost identical
 
 ### Duplicates
 
-Frames of one screen at different widths are not duplicates: follow `${CLAUDE_PLUGIN_ROOT}/skills/ingest/references/breakpoints.md` for them and for each source's `viewport`.
+Frames of one screen at different widths are not duplicates: follow `${CLAUDE_PLUGIN_ROOT}/skills/ingest/references/breakpoints.md` for them and for each source's `viewport`. Light and dark frames of one state are not duplicates either: pair them per `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/dark-mode.md`.
 
 Before adding a state from a candidate image, compare it with every existing state reference, at the reference's size:
 

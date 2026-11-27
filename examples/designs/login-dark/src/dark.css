@@ -1,0 +1,11 @@
+/* Dark appearance of the login sample: loaded after ../../login/src/login.css. */
+:root {
+  --brand: #B9C3FF;
+  --surface: #1B1B1F;
+  --text: #E4E1E6;
+  --text-variant: #C8C5D0;
+  --outline: #928F99;
+  --error: #F2B8B5;
+}
+.button { color: #0A1F8F; }
+.spinner circle { stroke: #0A1F8F; }
