@@ -153,7 +153,7 @@ Sauces keeps all its files in a `.sauces/` folder inside your project. To change
 { "fidelity_threshold": 95 }
 ```
 
-The default is 90. You'll probably want to add `.sauces/verify/` (the rendered screenshots) to your `.gitignore`.
+The default is 90. Add `"pseudo_locale": true` to also render each screen in a pseudo-locale (accented, about 30% longer text in [brackets]), which shows hard-coded and clipped text at a glance. You'll probably want to add `.sauces/verify/` (the rendered screenshots) to your `.gitignore`.
 
 ## Privacy
 

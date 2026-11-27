@@ -315,3 +315,29 @@ def test_fidelity_lists_breakpoints_for_web(tmp_path):
 
 def test_fidelity_has_no_breakpoints_block_on_mobile(sample_html):
     assert "Breakpoints" not in section(sample_html, "fidelity")
+
+
+def test_localization_shows_ltr_rtl_and_pseudo_side_by_side(tmp_path):
+    sauces = tmp_path / ".sauces"
+    shutil.copytree(SAMPLE, sauces)
+    summary_path = sauces / "verify" / "summary.json"
+    summary = json.loads(summary_path.read_text())
+    png = (REPO / "examples/designs/login/login--default.png").read_bytes()
+    default = next(r for r in summary["results"] if r["state"] == "default")
+    (sauces / "verify" / default["id"] / "rtl.png").write_bytes(png)
+    (sauces / "verify" / default["id"] / "pseudo.png").write_bytes(png)
+    default["pseudo_issues"] = ["'Forgot password?' shows without brackets: hard-coded"]
+    summary_path.write_text(json.dumps(summary))
+    loc = section(render(sauces, tmp_path), "localization")
+    assert "Left-to-right" in loc and "Right-to-left" in loc and "Pseudo-locale" in loc
+    assert loc.count("data:image/png;base64,") >= 3
+    assert "hard-coded" in loc
+
+
+def test_summary_schema_accepts_pseudo_issues(tmp_path):
+    summary = json.loads((SAMPLE / "verify/summary.json").read_text())
+    summary["results"][0]["pseudo_issues"] = ["clipped"]
+    path = tmp_path / "s.json"
+    path.write_text(json.dumps(summary))
+    r = run_script("check_json.py", str(REPO / "skills/verify/references/summary-schema.json"), str(path))
+    assert r.returncode == 0, r.stdout

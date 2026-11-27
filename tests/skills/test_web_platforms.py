@@ -260,3 +260,12 @@ def test_summary_accepts_breakpoint_ids(tmp_path):
     assert r.returncode == 0, r.stdout
     summary["results"][0]["id"] = "login@--default"
     assert check("skills/verify/references/summary-schema.json", summary, tmp_path).returncode == 1
+
+
+def test_pseudo_locale_reference_covers_every_platform():
+    text = (REPO / "skills/verify/references/pseudo-locale.md").read_text()
+    for platform in ("web-react", "web-html", "react-native", "flutter", "android-compose",
+                     "kmp-cmp", "ios-swiftui"):
+        assert f"**{platform}" in text or f"/ {platform}" in text, platform
+    assert "pseudo_locale.py" in text and "pseudo_issues" in text
+    assert "pseudo-locale.md" in (REPO / "skills/verify/SKILL.md").read_text()

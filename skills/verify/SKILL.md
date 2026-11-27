@@ -63,6 +63,8 @@ The state's result is its last iteration folder, `iter-<k>` with `k` the last `n
 
 Copy each `_render/a/<id>--rtl.png` from the screen's final render to `.sauces/verify/<id>/rtl.png`. The render test writes the PNG before it fails on an RTL overflow, so the file should exist; if it doesn't, add the rtl_issue "RTL render not produced: <reason from the test output>". Add each line of `_render/a/<id>--rtl.errors.txt` (overflows and exceptions collected during the RTL pump) as an issue. Then run the reference's RTL check and write each issue as one sentence in that state's `rtl_issues` (empty list when clean). RTL issues are reported, not fixed by verify; report lists them for a human. A layout overflow that also occurs in LTR is a build bug and was handled in section 3.
 
+If `.sauces/config.json` has `"pseudo_locale": true`, run the pseudo-locale pass from `${CLAUDE_PLUGIN_ROOT}/skills/verify/references/pseudo-locale.md` (it records `pseudo.png` and `pseudo_issues`; never scored).
+
 Delete `.sauces/verify/_render/` when all screens are done.
 
 ## 5. Summary file

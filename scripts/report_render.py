@@ -631,12 +631,41 @@ def section_localization(inputs) -> str:
         parts.append('<ul>' + "".join(f"<li><code>{e(i)}</code>: {e(x)}</li>" for i, x in rtl_issues) + "</ul>")
     else:
         parts.append('<p class="muted">No RTL issues found in the rendered states.</p>')
+    parts.append(direction_gallery(inputs))
     if assets:
         rows = [[e(a.get("name")), badge(a.get("kind")), f"<code>{e(a.get('path'))}</code>",
                  f"<code>{e(landed[a.get('name')])}</code>" if a.get("name") in landed else badge("not in project", "keep")]
                 for a in assets]
         parts.append("<h3>Assets</h3>" + table(["Asset", "Kind", "Extracted from design", "Created in project"], rows))
     return "".join(parts)
+
+
+def direction_gallery(inputs) -> str:
+    """Per rendered state that has an RTL or pseudo-locale capture: LTR, RTL and pseudo side by side."""
+    if not isinstance(inputs.verify, dict):
+        return ""
+    shots, pseudo_issues = [], []
+    for r in results(inputs):
+        rid = str(r.get("id", ""))
+        if not re.fullmatch(r"[A-Za-z0-9_-]+(?:@[0-9]+--[A-Za-z0-9_-]+)?", rid) or not r.get("rendered"):
+            continue
+        folder = inputs.dir / "verify" / rid
+        rtl, pseudo = folder / "rtl.png", folder / "pseudo.png"
+        if not (rtl.is_file() or pseudo.is_file()):
+            continue
+        ltr = folder / f"iter-{r.get('iterations') or 1}" / "rendered.png"
+        figs = figure(ltr, "Left-to-right") + (figure(rtl, "Right-to-left") if rtl.is_file() else "")
+        figs += figure(pseudo, "Pseudo-locale") if pseudo.is_file() else ""
+        shots.append(f'<article class="shot"><header><strong>{e(rid)}</strong></header>'
+                     f'<div class="triptych">{figs}</div></article>')
+        pseudo_issues += [(rid, x) for x in string_list(r.get("pseudo_issues"))]
+    if not shots:
+        return ""
+    html = '<div class="shots">' + "".join(shots) + "</div>"
+    if pseudo_issues:
+        html += ("<h3>Pseudo-locale</h3><ul>"
+                 + "".join(f"<li><code>{e(i)}</code>: {e(x)}</li>" for i, x in pseudo_issues) + "</ul>")
+    return html
 
 
 def _measured(m):

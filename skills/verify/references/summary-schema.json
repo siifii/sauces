@@ -23,6 +23,7 @@
           "iterations": {"type": "integer", "minimum": 0, "maximum": 3},
           "scores": {"type": "array", "items": {"type": "number", "minimum": 0, "maximum": 100}, "description": "Score of each iteration, in order."},
           "rtl_issues": {"type": "array", "items": {"type": "string"}},
+          "pseudo_issues": {"type": "array", "items": {"type": "string"}, "description": "Optional pseudo-locale pass (references/pseudo-locale.md): hard-coded or clipped text, overflow. Not scored."},
           "deviations": {"type": "array", "items": {"type": "string"}, "description": "suggestion_ids from .sauces/deviations.json for this screen state."},
           "remaining": {"type": "array", "items": {"type": "string"}, "description": "Differences left as they are, each with its reason."},
           "nondeterministic": {"type": "boolean", "description": "True when two renders of the same code scored more than 0.5 apart (R4)."}
