@@ -51,7 +51,8 @@ HEADER = ("| fixture | mode | builds | rendered | lint | fidelity(default) "
           "| reuse decisions | todos | PASS |")
 RULE = "|---|---|---|---|---|---|---|---|---|"
 PASS_SCORE = 90.0
-SKIP_DIRS = {".dart_tool", "build", "gen", ".git", ".sauces", "node_modules", "Pods", ".expo", ".gradle", "DerivedData"}
+SKIP_DIRS = {".dart_tool", "build", "gen", ".git", ".sauces", "node_modules", "Pods", ".expo", ".gradle", "DerivedData",
+             "dist", ".next", "out", "_site", ".astro", "coverage"}
 
 
 def load(path):

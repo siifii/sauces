@@ -131,6 +131,23 @@ def test_strict_eval_web_needs_rtl_only_at_narrowest_breakpoint(tmp_path):
     assert run_script("eval.py", *command).returncode == 1
 
 
+@pytest.mark.parametrize("build_dir", ["dist", ".next", "out", "_site", ".astro", "coverage"])
+def test_eval_skips_web_build_output(tmp_path, build_dir):
+    results = make_web_result(tmp_path, (95.0, 95.0), page=("index.css", ".x { color: var(--c); }\n"))
+    project = results / "flutter-bloc"
+    built = project / "web" / build_dir / "assets" / "index.css"
+    built.parent.mkdir(parents=True)
+    built.write_text(":root{--c:#3D5AFE}.x{color:#fff}\n")
+    state = project / ".sauces/state.json"
+    data = json.loads(state.read_text())
+    data["generated_files"].append("web")
+    state.write_text(json.dumps(data))
+    r = run_script("eval.py", "--results", str(results), "--fixtures", "flutter-bloc",
+                   "--builds-cmd", "true")
+    cells = [c.strip() for c in rows(r.stdout)[0].strip("|").split("|")]
+    assert cells[4] == "✓", cells
+
+
 def test_eval_create_platform_accepts_web():
     r = run_script("eval.py", "--help")
     assert "web-react" in r.stdout and "web-html" in r.stdout
