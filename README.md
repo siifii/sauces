@@ -185,12 +185,13 @@ Yes. Every step has its own command, and `cook` resumes from the last step that 
 
 ```text
 .claude-plugin/   plugin.json, marketplace.json
-assets/           plugin icon
-skills/           cook, ingest, scan-project, scaffold, plan, build, verify, report
 agents/           design-analyst, component-builder, fidelity-checker
-scripts/          Python 3 helpers (Pillow + numpy), including eval.py
-examples/         sample designs and target projects
-tests/            pytest suite
+assets/           plugin icon and the README demo
+docs/             public pages (the sample report, served by GitHub Pages)
+examples/         designs/<design-id>/ and targets/<platform-id[-variant]>/
+scripts/          Python 3 helpers (Pillow + numpy), including eval.py; dev/ for maintainers
+skills/           one folder per skill: SKILL.md, references/, assets/
+tests/            scripts/, skills/ and fixtures/ tests
 ```
 
 ```bash

@@ -40,6 +40,17 @@ tests/                         pytest suite (default, -m web, -m mobile, -m skil
 - Scripts must run with `python3 -I` and only Pillow + numpy. Each one needs a `--help`.
 - Keep platform knowledge correct and current. If unsure about an API, say so in the reference file rather than inventing one.
 
+## Resource organization and naming
+
+- Keep `.claude-plugin/plugin.json` and the component folders (`skills/`, `agents/`, `scripts/`, `assets/`) where they are: Claude Code discovers them by path.
+- Keep each skill's `SKILL.md`, `references/` and skill-specific `assets/` together in `skills/<skill>/`.
+- Plugin-facing names are kebab-case (skills, agents, Markdown references); required names stay as they are (`SKILL.md`, `plugin.json`).
+- Code follows its language: Python modules `snake_case.py`, Dart `lowercase_with_underscores`, Kotlin and Swift types `PascalCase`, React components `PascalCase.tsx`.
+- Platform IDs are canonical everywhere (`flutter`, `ios-swiftui`, `android-compose`, `kmp-cmp`, `react-native`, `web-react`, `web-html`). A reference is `references/<platform-id>.md`; a fixture is `examples/targets/<platform-id>[-variant]/`.
+- A sample design lives in `examples/designs/<design-id>/` with its `description.md` and `src/` together.
+- Target-project resources go where that framework expects them (Android `res/`, Flutter `lib/l10n/`, Xcode asset catalogs, Next `app/`, …). Where there is no official layout (React Native, plain web), follow the existing project.
+- Internal specs and plans stay local in `docs/superpowers/` (gitignored). Never commit them or link to them from shipped files.
+
 ## How to test
 
 - `claude plugin validate .claude-plugin/plugin.json`
