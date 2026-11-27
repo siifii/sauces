@@ -26,6 +26,10 @@ Give it a design. Get mobile or web UI that fits your app.
 
 ---
 
+<p align="center"><img src="assets/demo.gif" alt="Sauces: design in, built screen, scored against the design, every width and right-to-left, then a report" width="720" /></p>
+
+<p align="center"><sub>A real run on the Next.js sample app. See the full <a href="https://siifii.github.io/sauces/demo/report.html">sample report</a>.</sub></p>
+
 Sauces is a plugin for [Claude Code](https://code.claude.com). You give it a design (a Figma link, screenshots, a PDF or some SVG icons) and it builds that screen inside your mobile app or website.
 
 It reads your project before writing anything, so the new code uses your architecture, your theme, your components and your translation files. Then it renders every screen state, compares it to the design, fixes what doesn't match, and writes you a report.
