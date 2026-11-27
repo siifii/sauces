@@ -28,6 +28,8 @@ Use the first that exists, per state:
 
 Serve dev fixtures with the project's dev server (`next dev`, `vite`) or a static server; wait until it answers before capturing.
 
+**Leave no dev-server files behind.** Before starting the server, list the project's untracked files (`git status --porcelain --untracked-files=all`, or a file listing without git). After stopping it, compare: a file the server created (for example `AGENTS.md` or `next-env.d.ts` written by `next dev`) that is not one of Sauces' recorded files is removed, and the summary says which files were removed. Never remove a file that existed before verify started.
+
 ## Capture
 
 Write this script to `.sauces/verify/capture.cjs` (Sauces output, deleted with the folder) and run it once per state and pass:
@@ -57,7 +59,8 @@ const path = require("path");
   await page.goto(url, { waitUntil: "networkidle" });
   if (ready) await page.waitForSelector(ready);
   await page.evaluate(() => document.fonts.ready);
-  await page.addStyleTag({ content: "*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}" });
+  // Freeze motion and hide dev-only overlays (Next.js dev indicator, Vite error overlay).
+  await page.addStyleTag({ content: "*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}nextjs-portal,vite-error-overlay{display:none!important}" });
   await page.screenshot({ path: out, animations: "disabled", clip: { x: 0, y: 0, width, height } });
   await page.screenshot({ path: path.join(path.dirname(out), "full.png"), animations: "disabled", fullPage: true });
   const contentHeight = await page.evaluate(() => document.documentElement.scrollHeight);

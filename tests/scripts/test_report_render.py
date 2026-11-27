@@ -282,3 +282,36 @@ def test_fidelity_shows_web_breakpoint_states(tmp_path):
     assert "login@1440--default" in fidelity
     assert "Not rendered" not in fidelity
     assert "data:image/png;base64," in fidelity
+
+
+def test_fidelity_lists_breakpoints_for_web(tmp_path):
+    sauces = tmp_path / ".sauces"
+    shutil.copytree(SAMPLE, sauces)
+    manifest = json.loads((sauces / "manifest.json").read_text())
+    base = manifest["screens"][0]
+    manifest["screens"] = [dict(base, id=f"login@{w}", base="login", breakpoint=w) for w in (390, 1440)]
+    (sauces / "manifest.json").write_text(json.dumps(manifest))
+    plan = json.loads((sauces / "plan.json").read_text())
+    plan["platform"] = "web-react"
+    plan["breakpoints"] = [{"name": "sm", "min_width": 0, "source": "design"},
+                           {"name": "md", "min_width": 768, "source": "project"},
+                           {"name": "xl", "min_width": 1440, "source": "design"}]
+    (sauces / "plan.json").write_text(json.dumps(plan))
+    summary_path = sauces / "verify" / "summary.json"
+    summary = json.loads(summary_path.read_text())
+    summary["platform"] = "web-react"
+    out = []
+    for w, score in ((390, 97.5), (1440, 99.3)):
+        for r in summary["results"]:
+            out.append(dict(r, id=r["id"].replace("login--", f"login@{w}--"), screen=f"login@{w}",
+                            score=score if r["state"] == "default" else r["score"]))
+    summary["results"] = out
+    summary_path.write_text(json.dumps(summary))
+    fidelity = section(render(sauces, tmp_path), "fidelity")
+    assert "Breakpoints" in fidelity
+    assert "97.5" in fidelity and "99.3" in fidelity
+    assert "768" in fidelity and "not designed, not verified" in fidelity
+
+
+def test_fidelity_has_no_breakpoints_block_on_mobile(sample_html):
+    assert "Breakpoints" not in section(sample_html, "fidelity")

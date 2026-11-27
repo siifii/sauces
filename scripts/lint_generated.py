@@ -33,7 +33,9 @@ Web platforms (web-react) use a JS/TS/JSX scanner and a CSS declaration scanner:
 - physical-direction: CSS margin/padding/border-left/right, left/right, text-align/float/clear
   left|right; style-object keys (marginLeft, paddingRight, borderLeft...); Tailwind physical
   utilities (ml- mr- pl- pr- left- right- border-l border-r rounded-l rounded-r text-left
-  text-right float-left float-right, with variant prefixes) inside string/template literals.
+  text-right float-left float-right, with variant prefixes) inside literals that hold class
+  names: className/class attributes, variables or keys named *class*/*Class*/cls, and
+  arguments of clsx/cn/cva/tv/twMerge/twJoin/classnames/cx. Prose strings are not checked.
 - a11y-basic: <img> without alt; onClick on div/span; input/select/textarea with no
   aria-label, aria-labelledby, id referenced by an htmlFor in the same file (the same
   literal, or the same simple expression: htmlFor={id} / id={id}), <label> on the
@@ -519,6 +521,30 @@ def jsx_text_has_letters(masked, a):
     return False
 
 
+CLASS_ATTR = re.compile(r"\b(?:className|class)\s*=\s*\{?\s*$")
+CLASS_VAR = re.compile(r"\b\w*(?:[cC]lass(?:Name|es)?|[cC]ls)\s*[:=]\s*$")
+CLASS_CALL = re.compile(r"\b(?:clsx|cn|classnames|classNames|twMerge|twJoin|cva|tv|cx)\s*\($")
+
+
+def class_context(masked, pos):
+    """True if the literal at pos holds class names: a className/class attribute, a variable
+    or key named like a class list, or an argument (at any depth) of clsx/cn/cva/twMerge/..."""
+    before = masked[max(0, pos - 400):pos]
+    if CLASS_ATTR.search(before) or CLASS_VAR.search(before):
+        return True
+    depth = 0
+    for i in range(len(before) - 1, -1, -1):
+        c = before[i]
+        if c in ")]}":
+            depth += 1
+        elif c in "([{":
+            if depth:
+                depth -= 1
+            elif c == "(" and CLASS_CALL.search(before[:i + 1]):
+                return True
+    return False
+
+
 def js_literal_findings(src, masked, literals, skip_colors):
     """Colors, Tailwind physical utilities and CSS-in-template inside literals, plus
     style-object physical keys in code."""
@@ -537,7 +563,8 @@ def js_literal_findings(src, masked, literals, skip_colors):
                 ms = list(BRACKET_HEX.finditer(body)) + list(COLOR_FN.finditer(body)) + list(
                     re.finditer(r":\s*" + HEX, body))
                 hits += [(body_a + m.start(), "hardcoded-color") for m in ms]
-        hits += [(body_a + m.start(), "physical-direction") for m in TW_PHYSICAL.finditer(body)]
+        if class_context(masked, a):
+            hits += [(body_a + m.start(), "physical-direction") for m in TW_PHYSICAL.finditer(body)]
     for m in JS_PHYSICAL.finditer(masked):
         if not inside_literal(m.start(), literals):
             hits.append((m.start(), "physical-direction"))

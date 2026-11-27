@@ -384,7 +384,41 @@ def section_fidelity(inputs) -> str:
         return '<p class="empty">No screen states were verified.</p>'
     renderer = inputs.verify.get("renderer")
     lead = f'<p class="muted">Rendered with {e(renderer)}.</p>' if renderer else ""
-    return lead + '<div class="shots">' + "".join(shots) + "</div>"
+    return lead + breakpoints_table(inputs) + '<div class="shots">' + "".join(shots) + "</div>"
+
+
+def breakpoints_table(inputs) -> str:
+    """Web only: per screen base, each designed width with its default-state score, and plan
+    breakpoints that have no design frame ("not designed, not verified")."""
+    manifest = inputs.manifest if isinstance(inputs.manifest, dict) else {}
+    screens = [s for s in manifest.get("screens") or []
+               if isinstance(s, dict) and isinstance(s.get("breakpoint"), int)]
+    if not screens:
+        return ""
+    by_id = {str(r.get("id")): r for r in results(inputs)}
+    plan = inputs.plan if isinstance(inputs.plan, dict) else {}
+    planned = sorted({b.get("min_width") for b in plan.get("breakpoints") or []
+                      if isinstance(b, dict) and isinstance(b.get("min_width"), int)
+                      and b.get("min_width") > 0})
+    rows = []
+    for base in sorted({str(s.get("base") or s.get("id")) for s in screens}):
+        widths = sorted(s["breakpoint"] for s in screens if str(s.get("base") or s.get("id")) == base)
+        for w in widths:
+            r = by_id.get(f"{base}@{w}--default", {})
+            if r.get("rendered"):
+                cls = "pass" if r.get("passed") else "fail"
+                cell = f'<span class="score {cls}">{e(fmt_score(r.get("score")))}</span>'
+            else:
+                cell = badge("not rendered", "fail")
+            rows.append(f"<tr><td><code>{e(base)}</code></td><td>{w} px</td><td>designed</td><td>{cell}</td></tr>")
+        for w in planned:
+            if w not in widths:
+                rows.append(f"<tr><td><code>{e(base)}</code></td><td>{w} px</td>"
+                            f"<td>project breakpoint</td><td>not designed, not verified</td></tr>")
+    return ('<h3>Breakpoints</h3><p class="muted">Default-state score at each designed width. '
+            'Project breakpoints with no design frame are listed, not scored.</p>'
+            '<table><thead><tr><th>Screen</th><th>Width</th><th>Source</th><th>Default state</th></tr></thead>'
+            "<tbody>" + "".join(rows) + "</tbody></table>")
 
 
 def section_design_system(inputs) -> str:

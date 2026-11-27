@@ -38,6 +38,11 @@ def rules(r):
     ("a.tsx", "const s = {paddingRight: 4};", [(1, "physical-direction")]),
     ("a.tsx", '<div className="ml-2 text-left" />',
      [(1, "physical-direction"), (1, "physical-direction")]),
+    ("a.tsx", 'const c = clsx("ml-2", active && "pr-4");',
+     [(1, "physical-direction"), (1, "physical-direction")]),
+    ("a.tsx", 'const buttonClass = "pl-4 rounded";', [(1, "physical-direction")]),
+    ("a.tsx", 'const b = cva("px-4", { variants: { s: { lg: "mr-2" } } });', [(1, "physical-direction")]),
+    ("a.tsx", "<div className={`ml-2 ${x}`} />", [(1, "physical-direction")]),
     ("a.tsx", "<img src={logo} />", [(1, "a11y-basic")]),
     ("a.tsx", "<div onClick={go}>{t('k')}</div>", [(1, "a11y-basic")]),
     ("a.tsx", "<input type=\"email\" />", [(1, "a11y-basic")]),
@@ -59,6 +64,9 @@ def test_web_react_hits(tmp_path, rel, code, expected):
     ("a.tsx", "if (a > b && c < d) go();"),
     ("a.tsx", '<input id="email" />\n<label htmlFor="email">{t("e")}</label>'),
     ("a.tsx", "// <h1>Old title</h1>"),
+    ("a.tsx", 'const s = "Swipe left-to-right";'),
+    ("a.tsx", 'const label = t("align.text-left");'),
+    ("a.tsx", 'const url = "/docs/right-to-left";'),
     ("a.tsx", "<label htmlFor={id}>{label}</label>\n<div>\n<span />\n<input\n  id={id}\n/>"),
 ])
 def test_web_react_near_misses(tmp_path, rel, code):
