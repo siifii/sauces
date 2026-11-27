@@ -1,0 +1,18 @@
+{
+  "colors": [
+    {"hex": "#3D5AFE", "name": "primary", "origin": "figma",
+     "modes": {"dark": "#B9C3FF"},
+     "source": {"kind": "variable", "name": "Brand/Primary", "collection": "semantic", "alias_of": "Blue/500"}},
+    {"hex": "#FFFFFF", "name": "surface", "origin": "figma", "modes": {"dark": "#1B1B1F"},
+     "source": {"kind": "variable", "name": "Surface/Default", "collection": "semantic"}},
+    {"hex": "#B3261E", "name": "error", "origin": "extracted", "coverage": 0.01}
+  ],
+  "typography": [
+    {"name": "title-large", "size": 28, "weight": 600, "line_height": 36, "family": "Inter", "origin": "figma",
+     "source": {"kind": "style", "name": "Title/Large"}}
+  ],
+  "spacing": [4, {"value": 16, "name": "space-md", "origin": "figma",
+                  "source": {"kind": "variable", "name": "Space/MD"}}],
+  "radii": [{"value": 12, "name": "radius-card", "origin": "figma",
+             "source": {"kind": "variable", "name": "Radius/Card"}}]
+}

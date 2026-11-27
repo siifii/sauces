@@ -162,6 +162,49 @@
                   "figma",
                   "extracted"
                 ]
+              },
+              "modes": {
+                "type": "object",
+                "properties": {
+                  "dark": {
+                    "type": "string",
+                    "pattern": "^#[0-9A-Fa-f]{6}$"
+                  }
+                },
+                "additionalProperties": false,
+                "description": "Other appearances of this token. Only values the design holds; see skills/plan/references/dark-mode.md."
+              },
+              "source": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "variable",
+                      "style"
+                    ]
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "collection": {
+                    "type": "string"
+                  },
+                  "node": {
+                    "type": "string"
+                  },
+                  "alias_of": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "name"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [
@@ -189,6 +232,45 @@
               },
               "family": {
                 "type": "string"
+              },
+              "origin": {
+                "type": "string",
+                "enum": [
+                  "figma",
+                  "extracted"
+                ]
+              },
+              "source": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "variable",
+                      "style"
+                    ]
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "collection": {
+                    "type": "string"
+                  },
+                  "node": {
+                    "type": "string"
+                  },
+                  "alias_of": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "name"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [
@@ -201,13 +283,115 @@
         "spacing": {
           "type": "array",
           "items": {
-            "type": "number"
+            "type": ["number", "object"],
+            "properties": {
+              "value": {
+                "type": "number"
+              },
+              "name": {
+                "type": "string"
+              },
+              "origin": {
+                "type": "string",
+                "enum": [
+                  "figma",
+                  "extracted"
+                ]
+              },
+              "source": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "variable",
+                      "style"
+                    ]
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "collection": {
+                    "type": "string"
+                  },
+                  "node": {
+                    "type": "string"
+                  },
+                  "alias_of": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "value",
+              "origin"
+            ]
           }
         },
         "radii": {
           "type": "array",
           "items": {
-            "type": "number"
+            "type": ["number", "object"],
+            "properties": {
+              "value": {
+                "type": "number"
+              },
+              "name": {
+                "type": "string"
+              },
+              "origin": {
+                "type": "string",
+                "enum": [
+                  "figma",
+                  "extracted"
+                ]
+              },
+              "source": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "variable",
+                      "style"
+                    ]
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "collection": {
+                    "type": "string"
+                  },
+                  "node": {
+                    "type": "string"
+                  },
+                  "alias_of": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "value",
+              "origin"
+            ]
           }
         }
       },
