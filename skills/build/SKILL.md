@@ -50,6 +50,8 @@ Build items in this order: tokens → assets → atoms → molecules → organis
 
 Record each generated path with `sauces_state.py add-files generated` immediately after creating it. Record edited paths with `add-files changed` as soon as each edit is saved. Leave the build stage pending until the checks pass. This lets a retry recognize files from an interrupted build.
 
+- Items with `"update": "unchanged"` are carried over from an earlier run: skip them. See `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/update-mode.md`.
+
 Before creating a file at a `new` path, check that it does not exist. If it exists and is listed in `.sauces/state.json` `generated_files`, it is from an earlier build: update it in place. If it exists and is not listed, it is the user's: do not touch it; ask the user how to proceed (in eval mode skip the item and report it).
 
 Read each item's `notes` first: kept-theme fidelity differences (leave them; verify reports them), icon substitutions, the `TODO(sauces)` behavior to leave.

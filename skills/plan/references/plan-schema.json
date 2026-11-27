@@ -89,6 +89,18 @@
           },
           "layer": {
             "type": "string"
+          },
+          "update": {
+            "type": "string",
+            "enum": [
+              "unchanged"
+            ]
+          },
+          "affects": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -380,6 +392,46 @@
         ],
         "additionalProperties": false
       }
+    },
+    "update": {
+      "type": "object",
+      "properties": {
+        "from_plan": {
+          "type": "string"
+        },
+        "changed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "added": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "removed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unchanged": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "from_plan",
+        "changed",
+        "added",
+        "removed",
+        "unchanged"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [

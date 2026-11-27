@@ -1,7 +1,7 @@
 ---
 name: cook
 description: This skill should be used when the user asks to "cook", "implement this design", "turn this Figma into code", "build these screens from the design", "design to code", or runs "/sauces:cook" with Figma links, PNG/JPG screenshots, PDFs or SVGs. Runs the full Sauces pipeline (ingest, scan, plan, build, verify, report) against the current mobile project, resumes where it stopped, and creates a project first when the folder is empty.
-argument-hint: "[--lite] <figma-url | file | folder | glob>..."
+argument-hint: "[--lite] [--full] <figma-url | file | folder | glob>..."
 ---
 
 # Cook
@@ -20,6 +20,7 @@ Run the whole pipeline on the design sources in `$ARGUMENTS`: ingest → scan-pr
 ## 1. Sources and resume point
 
 0. **Lite run.** If `$ARGUMENTS` contains `--lite`, remove it from the arguments and create `.sauces/lite` (empty). It makes this run cheaper: web screens keep only their narrowest frame, and verify skips the determinism pass, the pseudo-locale pass and all but one fix round. Like `eval-approve`, the file is for this run only: delete it with `rm -f .sauces/lite` as the very last action of this cook run, whatever the outcome, and say "Lite run" in the final reply with what was skipped.
+0b. **Full run.** If `$ARGUMENTS` contains `--full`, remove it from the arguments; this run ignores update mode: `rm -rf .sauces/previous .sauces/design-diff.json` and go on.
 1. Split `$ARGUMENTS` into Figma links (`https://…figma.com/…`) and local paths (files, folders, globs; expand globs; quote paths with spaces). With arguments, write them to `.sauces/cook-sources.json` as a JSON array of strings, exactly as given (only when the file is missing or holds a different list, so an unchanged rerun writes nothing). With no arguments, take the list from `.sauces/cook-sources.json`, so the hash below stays the same; if it is missing, say: "Give me the design: `/sauces:cook <figma-url | file | folder>...`" and stop.
 2. Hash the local sources. Missing paths are a usage error: name them and stop.
 
@@ -35,8 +36,9 @@ Run the whole pipeline on the design sources in `$ARGUMENTS`: ingest → scan-pr
    ```
 
    - `done` and no Figma links: say "Nothing to do: the design hasn't changed and every stage is done. Report: `.sauces/report.html`." Stop without running any stage or writing any file (only the eval-mode cleanup above).
-   - `done` with Figma links: Figma files can change remotely. Copy `.sauces/manifest.json`, `.sauces/references/` and `.sauces/assets/` to a temporary folder outside `.sauces/`, rerun ingest (section 2, ingest row), then compare (`diff -rq`) the copies with the new files. Identical: say "Nothing to do: the Figma design is unchanged and every stage is done." and stop. Different: run `sauces_state.py reset-from scan` and continue from scan.
+   - `done` with Figma links: Figma files can change remotely. Unless `--full` was given, take the update snapshot below first (it replaces the temporary-folder copy), rerun ingest (section 2, ingest row), then compare (`diff -rq`) `.sauces/previous/manifest.json` and `.sauces/previous/references/` with the new files. With `--full`, copy `.sauces/manifest.json`, `.sauces/references/` and `.sauces/assets/` to a temporary folder outside `.sauces/` instead, rerun ingest, then compare against that. Identical: say "Nothing to do: the Figma design is unchanged and every stage is done." and stop. Different: run `sauces_state.py reset-from scan` and continue from scan.
    - Any stage name: start there. Say which stage you resume from when it is not `ingest`.
+   - **Update snapshot.** When `.sauces/manifest.json` exists, `--full` was not given and ingest will run again (hash changed, or the Figma comparison above differed): replace `.sauces/previous/` with copies of `manifest.json`, `references/` and `plan.json` (`rm -rf .sauces/previous && mkdir .sauces/previous && cp -R …`), then run ingest. After ingest succeeds, run `python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/design_diff.py" --old .sauces/previous --new .sauces -o .sauces/design-diff.json` and read `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/update-mode.md` for what plan, build and verify do with it. Say "Update run: N changed, M added, K removed, J unchanged" in the final reply. If `design_diff.py` exits non-zero, delete `.sauces/design-diff.json` and run as a full run.
 
 ## 2. Run the stages
 
